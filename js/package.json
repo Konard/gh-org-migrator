@@ -1,0 +1,17 @@
+{
+  "name": "github-organization-migrator",
+  "version": "0.0.1",
+  "description": "A tool to fetch GitHub organization repositories and issues",
+  "main": "index.js",
+  "type": "module",
+  "bin": {
+    "github-organization-migrator": "./index.js"
+  },
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@octokit/rest": "^21.0.1",
+    "dotenv": "^16.4.5"
+  }
+}

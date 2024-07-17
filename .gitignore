@@ -1,2 +1,5 @@
 .env
 data
+
+# js
+node_modules
