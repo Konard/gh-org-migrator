@@ -26,27 +26,36 @@ if (!fs.existsSync(OUTPUT_DIR)) {
   fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 }
 
-async function fetchRepositories() {
-  let page = 1;
-  let repos = [];
-  let fetchedRepos;
+// Utility function to write JSON data to a file
+function writeJSONToFile(filePath, data) {
+  fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+}
 
+// Utility function to fetch data with pagination
+async function fetchPaginatedData(fetchFunction, fetchParams) {
+  let page = 1;
+  let allData = [];
+  let fetchedData;
+  try {
+    do {
+      fetchedData = await fetchFunction({ ...fetchParams, per_page: 100, page });
+      allData = allData.concat(fetchedData.data);
+      page++;
+    } while (fetchedData.data.length === 100);
+  } catch (error) {
+    console.error(`Error fetching data: ${error.message}`);
+    process.exit(1);
+  }
+  return allData;
+}
+
+// Fetch repositories for the organization
+async function fetchRepositories() {
   try {
     console.log(`Fetching repositories for organization ${ORGANIZATION}...`);
-    do {
-      fetchedRepos = await octokit.repos.listForOrg({
-        org: ORGANIZATION,
-        per_page: 100,
-        page
-      });
-
-      repos = repos.concat(fetchedRepos.data);
-      page++;
-    } while (fetchedRepos.data.length === 100);
-
+    const repos = await fetchPaginatedData(octokit.repos.listForOrg, { org: ORGANIZATION });
     const repoNames = repos.map(repo => repo.name);
-    fs.writeFileSync(path.join(OUTPUT_DIR, 'orgrepos.json'), JSON.stringify(repos, null, 2));
-
+    writeJSONToFile(path.join(OUTPUT_DIR, 'org.repos.json'), repos);
     return repoNames;
   } catch (error) {
     console.error("Error fetching repositories:", error);
@@ -54,39 +63,29 @@ async function fetchRepositories() {
   }
 }
 
+// Fetch issues for a given repository
 async function fetchIssues(repoName) {
-  let page = 1;
-  let issues = [];
-  let fetchedIssues;
-
   try {
     console.log(`Fetching issues for repository ${repoName}...`);
-    do {
-      fetchedIssues = await octokit.issues.listForRepo({
-        owner: ORGANIZATION,
-        repo: repoName,
-        per_page: 100,
-        page
-      });
-
-      issues = issues.concat(fetchedIssues.data);
-      page++;
-    } while (fetchedIssues.data.length === 100);
-
-    fs.writeFileSync(path.join(OUTPUT_DIR, `${repoName}.issues.json`), JSON.stringify(issues, null, 2));
+    const issues = await fetchPaginatedData(octokit.issues.listForRepo, { owner: ORGANIZATION, repo: repoName });
+    writeJSONToFile(path.join(OUTPUT_DIR, `${repoName}.issues.json`), issues);
   } catch (error) {
-    console.error(`Error fetching issues for repository ${repoName}:`, error);
+    console.error(`Error fetching issues for repository ${repoName}: ${error.message}`);
+    process.exit(1);
   }
 }
 
 async function main() {
-  const repoNames = await fetchRepositories();
-  
-  for (const repoName of repoNames) {
-    await fetchIssues(repoName);
+  try {
+    const repoNames = await fetchRepositories();
+    for (const repoName of repoNames) {
+      await fetchIssues(repoName);
+    }
+    console.log(`Data fetching completed. All data is stored in the ${OUTPUT_DIR} directory.`);
+  } catch (error) {
+    console.error(`Unexpected error: ${error.message}`);
+    process.exit(1);
   }
-
-  console.log(`Data fetching completed. All data is stored in the ${OUTPUT_DIR} directory.`);
 }
 
 main();
