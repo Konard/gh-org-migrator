@@ -27,57 +27,57 @@ if (!fs.existsSync(OUTPUT_DIR)) {
 }
 
 async function fetchRepositories() {
-    let page = 1;
-    let repos = [];
-    let fetchedRepos;
-  
-    try {
-      console.log(`Fetching repositories for organization ${ORGANIZATION}...`);
-      do {
-        fetchedRepos = await octokit.repos.listForOrg({
-          org: ORGANIZATION,
-          per_page: 100,
-          page
-        });
-  
-        repos = repos.concat(fetchedRepos.data);
-        page++;
-      } while (fetchedRepos.data.length === 100);
-  
-      const repoNames = repos.map(repo => repo.name);
-      fs.writeFileSync(path.join(OUTPUT_DIR, 'org.repos.json'), JSON.stringify(repos, null, 2));
-  
-      return repoNames;
-    } catch (error) {
-      console.error("Error fetching repositories:", error);
-      process.exit(1);
-    }
-  }
+  let page = 1;
+  let repos = [];
+  let fetchedRepos;
 
-  async function fetchIssues(repoName) {
-    let page = 1;
-    let issues = [];
-    let fetchedIssues;
-  
-    try {
-      console.log(`Fetching issues for repository ${repoName}...`);
-      do {
-        fetchedIssues = await octokit.issues.listForRepo({
-          owner: ORGANIZATION,
-          repo: repoName,
-          per_page: 100,
-          page
-        });
-  
-        issues = issues.concat(fetchedIssues.data);
-        page++;
-      } while (fetchedIssues.data.length === 100);
-  
-      fs.writeFileSync(path.join(OUTPUT_DIR, `${repoName}.issues.json`), JSON.stringify(issues, null, 2));
-    } catch (error) {
-      console.error(`Error fetching issues for repository ${repoName}:`, error);
-    }
+  try {
+    console.log(`Fetching repositories for organization ${ORGANIZATION}...`);
+    do {
+      fetchedRepos = await octokit.repos.listForOrg({
+        org: ORGANIZATION,
+        per_page: 100,
+        page
+      });
+
+      repos = repos.concat(fetchedRepos.data);
+      page++;
+    } while (fetchedRepos.data.length === 100);
+
+    const repoNames = repos.map(repo => repo.name);
+    fs.writeFileSync(path.join(OUTPUT_DIR, 'orgrepos.json'), JSON.stringify(repos, null, 2));
+
+    return repoNames;
+  } catch (error) {
+    console.error("Error fetching repositories:", error);
+    process.exit(1);
   }
+}
+
+async function fetchIssues(repoName) {
+  let page = 1;
+  let issues = [];
+  let fetchedIssues;
+
+  try {
+    console.log(`Fetching issues for repository ${repoName}...`);
+    do {
+      fetchedIssues = await octokit.issues.listForRepo({
+        owner: ORGANIZATION,
+        repo: repoName,
+        per_page: 100,
+        page
+      });
+
+      issues = issues.concat(fetchedIssues.data);
+      page++;
+    } while (fetchedIssues.data.length === 100);
+
+    fs.writeFileSync(path.join(OUTPUT_DIR, `${repoName}.issues.json`), JSON.stringify(issues, null, 2));
+  } catch (error) {
+    console.error(`Error fetching issues for repository ${repoName}:`, error);
+  }
+}
 
 async function main() {
   const repoNames = await fetchRepositories();
