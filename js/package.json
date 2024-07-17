@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@octokit/rest": "^21.0.1",
-    "dotenv": "^16.4.5"
+    "dotenv": "^16.4.5",
+    "simple-git": "^3.25.0"
   }
 }

@@ -4,6 +4,7 @@ import { Octokit } from "@octokit/rest";
 import fs from 'fs';
 import path from 'path';
 import { config } from 'dotenv';
+import simpleGit from 'simple-git';
 
 // Load environment variables
 config();
@@ -19,6 +20,9 @@ if (!ACCESS_TOKEN || !ORGANIZATION) {
 const octokit = new Octokit({
   auth: ACCESS_TOKEN
 });
+
+// Initialize simple-git
+const git = simpleGit();
 
 // Create a directory to store the output
 const OUTPUT_DIR = path.join(process.cwd(), 'data', ORGANIZATION);
@@ -75,13 +79,30 @@ async function fetchIssues(repoName) {
   }
 }
 
+// Clone a repository
+async function cloneRepository(repoName) {
+  const repoDir = path.join(OUTPUT_DIR, repoName);
+  if (!fs.existsSync(repoDir)) {
+    fs.mkdirSync(repoDir, { recursive: true });
+  }
+  try {
+    console.log(`Cloning repository ${repoName}...`);
+    await git.clone(`https://github.com/${ORGANIZATION}/${repoName}.git`, repoDir);
+    console.log(`Repository ${repoName} cloned successfully.`);
+  } catch (error) {
+    console.error(`Error cloning repository ${repoName}: ${error.message}`);
+    process.exit(1);
+  }
+}
+
 async function main() {
   try {
     const repoNames = await fetchRepositories();
     for (const repoName of repoNames) {
       await fetchIssues(repoName);
+      await cloneRepository(repoName);
     }
-    console.log(`Data fetching completed. All data is stored in the ${OUTPUT_DIR} directory.`);
+    console.log(`Data fetching and cloning completed. All data is stored in the ${OUTPUT_DIR} directory.`);
   } catch (error) {
     console.error(`Unexpected error: ${error.message}`);
     process.exit(1);
