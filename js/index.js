@@ -1,7 +1,8 @@
+#!/usr/bin/env node
+
 import { Octokit } from "@octokit/rest";
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import { config } from 'dotenv';
 
 // Load environment variables
@@ -20,9 +21,7 @@ const octokit = new Octokit({
 });
 
 // Create a directory to store the output
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const OUTPUT_DIR = path.join(__dirname, 'data', ORGANIZATION);
+const OUTPUT_DIR = path.join(process.cwd(), 'data', ORGANIZATION);
 if (!fs.existsSync(OUTPUT_DIR)) {
   fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 }
