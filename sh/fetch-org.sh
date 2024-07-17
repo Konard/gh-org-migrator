@@ -1,20 +1,21 @@
 #!/bin/bash
 
-# Function to get user input with a prompt
-get_input() {
-    read -p "$1: " input
-    echo "$input"
-}
+# Load environment variables from .env file
+if [ -f .env ]; then
+    export $(cat .env | grep -v '#' | awk '/=/ {print $1}')
+else
+    echo ".env file not found! Please create one with ACCESS_TOKEN and ORGANIZATION."
+    exit 1
+fi
 
-# Get GitHub personal access token
-echo "Please provide your GitHub personal access token. Ensure it has the necessary permissions."
-ACCESS_TOKEN=$(get_input "GitHub Personal Access Token")
-
-# Get the organization name
-ORGANIZATION=$(get_input "GitHub Organization Name")
+# Check if ACCESS_TOKEN and ORGANIZATION are set
+if [ -z "$ACCESS_TOKEN" ] || [ -z "$ORGANIZATION" ]; then
+    echo "ACCESS_TOKEN and ORGANIZATION must be set in the .env file."
+    exit 1
+fi
 
 # Create a directory to store the output
-OUTPUT_DIR="github_org_data"
+OUTPUT_DIR="data/$ORGANIZATION"
 mkdir -p "$OUTPUT_DIR"
 
 # Fetch all repositories
