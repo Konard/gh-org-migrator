@@ -3,6 +3,7 @@
 
 .env
 data
+backup-of-data
 
 # js
 node_modules
