@@ -9,10 +9,10 @@ import simpleGit from 'simple-git';
 // Load environment variables
 config();
 
-const { ACCESS_TOKEN, ORGANIZATION } = process.env;
+const { ACCESS_TOKEN, SOURCE_ORGANIZATION } = process.env;
 
-if (!ACCESS_TOKEN || !ORGANIZATION) {
-  console.error("ACCESS_TOKEN and ORGANIZATION must be set in the .env file.");
+if (!ACCESS_TOKEN || !SOURCE_ORGANIZATION) {
+  console.error("ACCESS_TOKEN and SOURCE_ORGANIZATION must be set in the .env file.");
   process.exit(1);
 }
 
@@ -25,7 +25,7 @@ const octokit = new Octokit({
 const git = simpleGit();
 
 // Create a directory to store the output
-const OUTPUT_DIR = path.join(process.cwd(), 'data', ORGANIZATION);
+const OUTPUT_DIR = path.join(process.cwd(), 'data', SOURCE_ORGANIZATION);
 if (!fs.existsSync(OUTPUT_DIR)) {
   fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 }
@@ -56,8 +56,8 @@ async function fetchPaginatedData(fetchFunction, fetchParams) {
 // Fetch repositories for the organization
 async function fetchRepositories() {
   try {
-    console.log(`Fetching repositories for organization ${ORGANIZATION}...`);
-    const repos = await fetchPaginatedData(octokit.repos.listForOrg, { org: ORGANIZATION });
+    console.log(`Fetching repositories for organization ${SOURCE_ORGANIZATION}...`);
+    const repos = await fetchPaginatedData(octokit.repos.listForOrg, { org: SOURCE_ORGANIZATION });
     const repoNames = repos.map(repo => repo.name);
     writeJSONToFile(path.join(OUTPUT_DIR, 'org.repos.json'), repos);
     return repoNames;
@@ -71,7 +71,7 @@ async function fetchRepositories() {
 async function fetchIssues(repoName) {
   try {
     console.log(`Fetching issues for repository ${repoName}...`);
-    const issues = await fetchPaginatedData(octokit.issues.listForRepo, { owner: ORGANIZATION, repo: repoName });
+    const issues = await fetchPaginatedData(octokit.issues.listForRepo, { owner: SOURCE_ORGANIZATION, repo: repoName });
     writeJSONToFile(path.join(OUTPUT_DIR, `${repoName}.issues.json`), issues);
   } catch (error) {
     console.error(`Error fetching issues for repository ${repoName}: ${error.message}`);
@@ -87,7 +87,7 @@ async function cloneRepository(repoName) {
   }
   try {
     console.log(`Cloning repository ${repoName}...`);
-    await git.clone(`https://github.com/${ORGANIZATION}/${repoName}.git`, repoDir);
+    await git.clone(`https://github.com/${SOURCE_ORGANIZATION}/${repoName}.git`, repoDir);
     console.log(`Repository ${repoName} cloned successfully.`);
   } catch (error) {
     console.error(`Error cloning repository ${repoName}: ${error.message}`);
