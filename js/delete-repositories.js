@@ -4,6 +4,7 @@ import { Octokit } from "@octokit/rest";
 import { config } from 'dotenv';
 import fs from 'fs';
 import path from 'path';
+import inquirer from 'inquirer';
 
 // Load environment variables
 config();
@@ -68,10 +69,28 @@ async function deleteRepository(repoName) {
 async function main() {
   try {
     // const sourceRepos = await getSourceRepositories();
-
+ 
     const repoFilePath = path.join(INPUT_DIR, 'org.repos.json');
     const sourceRepos = readJSONFromFile(repoFilePath);
-
+ 
+    console.log(`Source Organization: ${SOURCE_ORGANIZATION}`);
+    console.log(`Target Organization: ${TARGET_ORGANIZATION}`);
+    console.log(`Repositories to delete: ${sourceRepos.map(repo => repo.name).join(', ')}`);
+ 
+    const { confirm } = await inquirer.prompt([
+      {
+        type: 'confirm',
+        name: 'confirm',
+        message: 'Do you want to proceed with the deletion of the listed repositories?',
+        default: false
+      }
+    ]);
+ 
+    if (!confirm) {
+      console.log('Operation cancelled by the user.');
+      process.exit(0);
+    }
+ 
     for (const repo of sourceRepos) {
       await deleteRepository(repo.name);
     }
@@ -80,6 +99,7 @@ async function main() {
     console.error(`Unexpected error: ${error.message}`);
     process.exit(1);
   }
-}
+ }
+ 
 
 main();

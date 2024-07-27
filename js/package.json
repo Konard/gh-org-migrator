@@ -6,7 +6,8 @@
   "type": "module",
   "bin": {
     "gh-org-download": "./download.js",
-    "gh-org-upload": "./upload.js"
+    "gh-org-upload": "./upload.js",
+    "gh-org-delete-repos": "./delete-repositories.js"
   },
   "scripts": {
     "start": "node index.js"
@@ -14,6 +15,7 @@
   "dependencies": {
     "@octokit/rest": "^21.0.1",
     "dotenv": "^16.4.5",
+    "inquirer": "^10.1.2",
     "simple-git": "^3.25.0"
   }
 }
