@@ -152,12 +152,14 @@ async function pushRepository(repoName) {
 
     // Check if the branch 'main' exists, if not create it
     const branchSummary = await git.cwd(repoDir).branchLocal();
-    const branchName = branchSummary.all.includes('main') ? 'main' : (branchSummary.current || 'master');
+    const branchName = branchSummary.current; 
 
-    if (!branchSummary.all.includes(branchName)) {
-      console.log(`Branch ${branchName} not found, creating it...`);
-      await git.cwd(repoDir).checkoutLocalBranch(branchName);
-    }
+    // const branchName = branchSummary.all.includes('main') ? 'main' : (branchSummary.current || 'master');
+
+    // if (!branchSummary.all.includes(branchName)) {
+    //   console.log(`Branch ${branchName} not found, creating it...`);
+    //   await git.cwd(repoDir).checkoutLocalBranch(branchName);
+    // }
 
     await git.cwd(repoDir).removeRemote('origin');
     await git.cwd(repoDir).addRemote('origin', `https://github.com/${TARGET_ORGANIZATION}/${repoName}.git`);
