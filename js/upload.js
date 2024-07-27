@@ -12,7 +12,7 @@ config();
 const { ACCESS_TOKEN, SOURCE_ORGANIZATION, TARGET_ORGANIZATION } = process.env;
 
 if (!ACCESS_TOKEN || !SOURCE_ORGANIZATION || !TARGET_ORGANIZATION) {
- console.error("ACCESS_TOKEN, SOURCE_ORGANIZATION and TARGET_ORGANIZATION must be set in the .env file.");
+ console.error("ACCESS_TOKEN, SOURCE_ORGANIZATION, and TARGET_ORGANIZATION must be set in the .env file.");
  process.exit(1);
 }
 
@@ -80,9 +80,20 @@ async function pushRepository(repoName) {
  }
  try {
    console.log(`Pushing repository ${repoName} to organization ${TARGET_ORGANIZATION}...`);
+   
+   // Check if the branch 'main' exists, if not create it
+   const branchSummary = await git.cwd(repoDir).branchLocal();
+   const branchName = branchSummary.all.includes('main') ? 'main' : (branchSummary.current || 'master');
+   
+   if (!branchSummary.all.includes(branchName)) {
+     console.log(`Branch ${branchName} not found, creating it...`);
+     await git.cwd(repoDir).checkoutLocalBranch(branchName);
+   }
+   
    await git.cwd(repoDir).removeRemote('origin');
    await git.cwd(repoDir).addRemote('origin', `https://github.com/${TARGET_ORGANIZATION}/${repoName}.git`);
-   await git.cwd(repoDir).push('origin', 'main'); // Assumes the main branch is used
+   await git.cwd(repoDir).push('origin', branchName);
+
    console.log(`Repository ${repoName} pushed successfully.`);
  } catch (error) {
    console.error(`Error pushing repository ${repoName}: ${error.message}`);
