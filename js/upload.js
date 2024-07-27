@@ -150,22 +150,32 @@ async function pushRepository(repoName) {
   try {
     console.log(`Pushing repository ${repoName} to organization ${TARGET_ORGANIZATION}...`);
 
-    // Check if the branch 'main' exists, if not create it
-    const branchSummary = await git.cwd(repoDir).branchLocal();
-    const branchName = branchSummary.current; 
+    // // Check if the branch 'main' exists, if not create it
+    // const branchSummary = await git.cwd(repoDir).branchLocal();
+    // const branchName = branchSummary.current; 
 
-    // const branchName = branchSummary.all.includes('main') ? 'main' : (branchSummary.current || 'master');
+    // // const branchName = branchSummary.all.includes('main') ? 'main' : (branchSummary.current || 'master');
 
-    // if (!branchSummary.all.includes(branchName)) {
-    //   console.log(`Branch ${branchName} not found, creating it...`);
-    //   await git.cwd(repoDir).checkoutLocalBranch(branchName);
-    // }
+    // // if (!branchSummary.all.includes(branchName)) {
+    // //   console.log(`Branch ${branchName} not found, creating it...`);
+    // //   await git.cwd(repoDir).checkoutLocalBranch(branchName);
+    // // }
 
     await git.cwd(repoDir).removeRemote('origin');
     await git.cwd(repoDir).addRemote('origin', `https://github.com/${TARGET_ORGANIZATION}/${repoName}.git`);
-    const pushResult = await git.cwd(repoDir).push('origin', branchName);
+    
+    // const pushResult = await git.cwd(repoDir).push('origin', branchName);
 
-    if (pushResult?.pushed?.length == 1 && pushResult.pushed[0].alreadyUpdated) {
+    const pushedBranches = await git.cwd(repoDir).push('origin', '--all');
+    const pushedTags = await git.cwd(repoDir).pushTags('origin');
+
+    console.log({ pushedBranches: pushedBranches.pushed })
+    // console.log({ pushedTags: pushedTags.pushed })
+
+    // process.exit(1);
+
+    if ((pushedBranches?.pushed?.length <= 0 || pushedBranches.pushed.every(i => i.alreadyUpdated)) 
+     && (pushedTags?.pushed?.length <= 0 || pushedTags.pushed.every(i => i.alreadyUpdated)) ) {
       console.log(`Repository ${repoName} is already up to date.`);
     } else {
       console.log(`Repository ${repoName} pushed successfully.`);
