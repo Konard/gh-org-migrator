@@ -105,9 +105,9 @@ async function createIssues(repoName, issues) {
     if (!exists) {
       try {
         const remaining = await checkRateLimit();
-        if (remaining < 5) {
-          const waitTime = 60000; // wait for 1 minute if the remaining requests are less than 5
-          console.log(`Low rate limit remaining (${remaining}). Waiting for ${waitTime / 1000} seconds...`);
+        if (remaining < 10) {
+          const waitTime = (new Date(response.headers['x-ratelimit-reset'] * 1000).getTime() - new Date().getTime()) + 10000;
+          console.log(`Low rate limit remaining (${remaining}). Waiting until rate limit resets...`);
           await new Promise(resolve => setTimeout(resolve, waitTime));
         }
 
@@ -118,8 +118,9 @@ async function createIssues(repoName, issues) {
           title: issue.title,
           body: issue.body
         });
-        // Wait for 2 seconds before creating the next issue to avoid rate limits
-        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        // Wait for 4 seconds before creating the next issue to avoid rate limits
+        await new Promise(resolve => setTimeout(resolve, 4000));
       } catch (error) {
         console.error(`Error creating issue "${issue.title}" in repository ${repoName}: ${error.message}`);
         process.exit(1);
@@ -165,21 +166,26 @@ async function main() {
     const repoFilePath = path.join(INPUT_DIR, 'org.repos.json');
     const repos = readJSONFromFile(repoFilePath);
 
+    // Repos
     for (const repo of repos) {
       const repoName = repo.name;
       const exists = await repositoryExists(repoName);
-
       if (!exists) {
         await createRepository(repoName);
       } else {
         console.log(`Repository ${repoName} already exists. Skipping creation.`);
       }
+      await pushRepository(repoName);
+    }
 
+    // Issues
+    for (const repo of repos) {
+      const repoName = repo.name;
       const issuesFilePath = path.join(INPUT_DIR, `${repoName}.issues.json`);
       const issues = readJSONFromFile(issuesFilePath);
       await createIssues(repoName, issues);
-      await pushRepository(repoName);
     }
+
     console.log(`Data uploading completed. All data is uploaded to the ${TARGET_ORGANIZATION} organization.`);
   } catch (error) {
     console.error(`Unexpected error: ${error.message}`);
