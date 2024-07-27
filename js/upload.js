@@ -83,13 +83,13 @@ async function createRepository(repo) {
 }
 
 // Check if an issue exists in a repository
-async function issueExists(repoName, issueTitle) {
+async function issueExists(repoName, issue) {
   try {
     const { data: issues } = await octokit.issues.listForRepo({
       owner: TARGET_ORGANIZATION,
       repo: repoName
     });
-    return issues.some(issue => issue.title === issueTitle);
+    return issues.some(i => i.title === issue.title && i.body === issue.body);
   } catch (error) {
     console.error(`Error checking issue "${issueTitle}" in repository ${repoName}: ${error.message}`);
     process.exit(1);
@@ -112,7 +112,7 @@ async function checkRateLimit() {
 // Create issues for a given repository with delay and rate limit check
 async function createIssues(repoName, issues) {
   for (const issue of issues) {
-    const exists = await issueExists(repoName, issue.title);
+    const exists = await issueExists(repoName, issue);
     if (!exists) {
       try {
         const remaining = await checkRateLimit();
