@@ -27,6 +27,10 @@ const git = simpleGit();
 // Path to the input data directory
 const INPUT_DIR = path.join(process.cwd(), 'data', SOURCE_ORGANIZATION);
 
+const defaultIntervalMs = 20000;
+
+const sleep = async (ms) => await new Promise(resolve => setTimeout(resolve, ms));
+
 // Utility function to read JSON data from a file
 function readJSONFromFile(filePath) {
   if (fs.existsSync(filePath)) {
@@ -56,15 +60,15 @@ async function repositoryExists(repoName) {
 }
 
 // Create a repository in the target organization
-async function createRepository(repoName) {
+async function createRepository(repo) {
   try {
-    console.log(`Creating repository ${repoName} in organization ${TARGET_ORGANIZATION}...`);
+    console.log(`Creating repository ${repo.name} in organization ${TARGET_ORGANIZATION}...`);
     const response = await octokit.repos.createInOrg({
       org: TARGET_ORGANIZATION,
-      name: repoName,
-      private: false // Set to true if you want the repository to be private
+      name: repo.name,
+      private: repo.private
     });
-    await new Promise(resolve => setTimeout(resolve, 10000));
+    await sleep(defaultIntervalMs);
     return response.data;
   } catch (error) {
     console.error(`Error creating repository ${repoName}: ${error.message}`);
@@ -109,7 +113,7 @@ async function createIssues(repoName, issues) {
         if (remaining < 10) {
           const waitTime = (new Date(response.headers['x-ratelimit-reset'] * 1000).getTime() - new Date().getTime()) + 10000;
           console.log(`Low rate limit remaining (${remaining}). Waiting until rate limit resets...`);
-          await new Promise(resolve => setTimeout(resolve, waitTime));
+          await sleep(waitTime);
         }
 
         console.log(`Creating issue "${issue.title}" in repository ${repoName}...`);
@@ -119,8 +123,7 @@ async function createIssues(repoName, issues) {
           title: issue.title,
           body: issue.body
         });
-
-        await new Promise(resolve => setTimeout(resolve, 10000));
+        await sleep(defaultIntervalMs);
       } catch (error) {
         console.error(`Error creating issue "${issue.title}" in repository ${repoName}: ${error.message}`);
         process.exit(1);
@@ -155,6 +158,7 @@ async function pushRepository(repoName) {
     await git.cwd(repoDir).push('origin', branchName);
 
     console.log(`Repository ${repoName} pushed successfully.`);
+    await sleep(defaultIntervalMs);
   } catch (error) {
     console.error(`Error pushing repository ${repoName}: ${error.message}`);
     process.exit(1);
@@ -171,7 +175,7 @@ async function main() {
       const repoName = repo.name;
       const exists = await repositoryExists(repoName);
       if (!exists) {
-        await createRepository(repoName);
+        await createRepository(repo);
       } else {
         console.log(`Repository ${repoName} already exists. Skipping creation.`);
       }
