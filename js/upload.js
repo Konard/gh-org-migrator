@@ -161,7 +161,9 @@ async function pushRepository(repoName) {
 
     await git.cwd(repoDir).removeRemote('origin');
     await git.cwd(repoDir).addRemote('origin', `https://github.com/${TARGET_ORGANIZATION}/${repoName}.git`);
-    await git.cwd(repoDir).push('origin', branchName);
+    const pushResult = await git.cwd(repoDir).push('origin', branchName);   
+
+    console.log({ pushResult });
 
     console.log(`Repository ${repoName} pushed successfully.`);
     await sleep(defaultIntervalMs);
