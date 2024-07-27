@@ -64,6 +64,7 @@ async function createRepository(repoName) {
       name: repoName,
       private: false // Set to true if you want the repository to be private
     });
+    await new Promise(resolve => setTimeout(resolve, 10000));
     return response.data;
   } catch (error) {
     console.error(`Error creating repository ${repoName}: ${error.message}`);
@@ -119,8 +120,7 @@ async function createIssues(repoName, issues) {
           body: issue.body
         });
 
-        // Wait for 4 seconds before creating the next issue to avoid rate limits
-        await new Promise(resolve => setTimeout(resolve, 4000));
+        await new Promise(resolve => setTimeout(resolve, 10000));
       } catch (error) {
         console.error(`Error creating issue "${issue.title}" in repository ${repoName}: ${error.message}`);
         process.exit(1);
@@ -175,6 +175,11 @@ async function main() {
       } else {
         console.log(`Repository ${repoName} already exists. Skipping creation.`);
       }
+    }
+
+    // Code commits
+    for (const repo of repos) {
+      const repoName = repo.name;
       await pushRepository(repoName);
     }
 
