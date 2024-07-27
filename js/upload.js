@@ -37,6 +37,24 @@ function readJSONFromFile(filePath) {
  }
 }
 
+// Check if a repository exists in the target organization
+async function repositoryExists(repoName) {
+ try {
+   await octokit.repos.get({
+     owner: TARGET_ORGANIZATION,
+     repo: repoName
+   });
+   return true;
+ } catch (error) {
+   if (error.status === 404) {
+     return false;
+   } else {
+     console.error(`Error checking repository ${repoName}: ${error.message}`);
+     process.exit(1);
+   }
+ }
+}
+
 // Create a repository in the target organization
 async function createRepository(repoName) {
  try {
@@ -93,7 +111,7 @@ async function pushRepository(repoName) {
    await git.cwd(repoDir).removeRemote('origin');
    await git.cwd(repoDir).addRemote('origin', `https://github.com/${TARGET_ORGANIZATION}/${repoName}.git`);
    await git.cwd(repoDir).push('origin', branchName);
-
+   
    console.log(`Repository ${repoName} pushed successfully.`);
  } catch (error) {
    console.error(`Error pushing repository ${repoName}: ${error.message}`);
@@ -108,7 +126,14 @@ async function main() {
 
    for (const repo of repos) {
      const repoName = repo.name;
-     await createRepository(repoName);
+     const exists = await repositoryExists(repoName);
+
+     if (!exists) {
+       await createRepository(repoName);
+     } else {
+       console.log(`Repository ${repoName} already exists. Skipping creation.`);
+     }
+
      const issuesFilePath = path.join(INPUT_DIR, `${repoName}.issues.json`);
      const issues = readJSONFromFile(issuesFilePath);
      await createIssues(repoName, issues);
