@@ -66,7 +66,13 @@ async function createRepository(repo) {
     const response = await octokit.repos.createInOrg({
       org: TARGET_ORGANIZATION,
       name: repo.name,
-      private: repo.private
+      private: repo.private,
+      description: repo.description,
+      homepage: repo.homepage,
+      has_issues: repo.has_issues,
+      has_projects: repo.has_projects,
+      has_wiki: repo.has_wiki,
+      has_downloads: repo.has_downloads,
     });
     await sleep(defaultIntervalMs);
     return response.data;
