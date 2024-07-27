@@ -2,6 +2,8 @@
 
 import { Octokit } from "@octokit/rest";
 import { config } from 'dotenv';
+import fs from 'fs';
+import path from 'path';
 
 // Load environment variables
 config();
@@ -20,6 +22,16 @@ const INPUT_DIR = path.join(process.cwd(), 'data', SOURCE_ORGANIZATION);
 const octokit = new Octokit({
   auth: ACCESS_TOKEN
 });
+
+// Utility function to read JSON data from a file
+function readJSONFromFile(filePath) {
+  if (fs.existsSync(filePath)) {
+    return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+  } else {
+    console.error(`File not found: ${filePath}`);
+    process.exit(1);
+  }
+}
 
 // // Get all repositories in the source organization
 // async function getSourceRepositories() {
