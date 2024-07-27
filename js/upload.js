@@ -161,12 +161,14 @@ async function pushRepository(repoName) {
 
     await git.cwd(repoDir).removeRemote('origin');
     await git.cwd(repoDir).addRemote('origin', `https://github.com/${TARGET_ORGANIZATION}/${repoName}.git`);
-    const pushResult = await git.cwd(repoDir).push('origin', branchName);   
+    const pushResult = await git.cwd(repoDir).push('origin', branchName);
 
-    console.log({ pushResult });
-
-    console.log(`Repository ${repoName} pushed successfully.`);
-    await sleep(defaultIntervalMs);
+    if (pushResult?.pushed?.length == 1 && pushResult.pushed[0].alreadyUpdated) {
+      console.log(`Repository ${repoName} is already up to date.`);
+    } else {
+      console.log(`Repository ${repoName} pushed successfully.`);
+      await sleep(defaultIntervalMs);
+    }
   } catch (error) {
     console.error(`Error pushing repository ${repoName}: ${error.message}`);
     process.exit(1);
