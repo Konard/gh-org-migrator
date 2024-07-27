@@ -151,8 +151,15 @@ async function pushRepository(repoName) {
     console.log(`Pushing repository ${repoName} to organization ${TARGET_ORGANIZATION}...`);
 
     // // Check if the branch 'main' exists, if not create it
-    // const branchSummary = await git.cwd(repoDir).branchLocal();
-    // const branchName = branchSummary.current; 
+    const branchSummary = await git.cwd(repoDir).branchLocal();
+    const branchName = branchSummary.current;
+
+    console.log({ allLocalBranches: branchSummary.all });
+
+    const branches = await git.cwd(repoDir).branch();
+
+    console.log({ allBranches: branches.all });
+
 
     // // const branchName = branchSummary.all.includes('main') ? 'main' : (branchSummary.current || 'master');
 
@@ -160,6 +167,23 @@ async function pushRepository(repoName) {
     // //   console.log(`Branch ${branchName} not found, creating it...`);
     // //   await git.cwd(repoDir).checkoutLocalBranch(branchName);
     // // }
+
+    await git.cwd(repoDir).removeRemote('origin');
+    await git.cwd(repoDir).addRemote('origin', `https://github.com/${SOURCE_ORGANIZATION}/${repoName}.git`);
+
+    // await git.fetch();
+
+    // const remotes = await git.getRemotes();
+    // for (const remote of remotes) {
+    //   await git.cwd(repoDir).fetch(remote.name);
+    //   console.log(`Successfully fetched all branches from ${remote.name}`);
+
+    //   // await git.cwd(repoDir).pull(remote.name);
+    //   // console.log(`Successfully pulled all branches from ${remote.name}`);
+    // }
+
+    await git.cwd(repoDir).fetch('origin');
+    await git.cwd(repoDir).pull('origin', branchName);
 
     await git.cwd(repoDir).removeRemote('origin');
     await git.cwd(repoDir).addRemote('origin', `https://github.com/${TARGET_ORGANIZATION}/${repoName}.git`);
