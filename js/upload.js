@@ -5,6 +5,7 @@ import fs from 'fs';
 import path from 'path';
 import { config } from 'dotenv';
 import simpleGit from 'simple-git';
+import inquirer from 'inquirer';
 
 // Load environment variables
 config();
@@ -196,6 +197,42 @@ async function pullAllLocalBranches(repoDir) {
   }
 }
 
+// Push all local branches
+async function pushAllLocalBranches(repoDir) {
+  let branchesAlreadyUpdated = true;
+  const localBranches = await git.branchLocal();
+  for (const branchName of localBranches.all) {
+    console.log({ remoteBranchName: branchName })
+    await git.cwd(repoDir).checkout(branchName);
+
+    let tryAgain = false;
+    do {
+      try {
+        const pushedBranches = await git.cwd(repoDir).push('origin', branchName);
+        if (!(pushedBranches?.pushed?.length <= 0 || pushedBranches.pushed.every(i => i.alreadyUpdated))) {
+          branchesAlreadyUpdated = false;
+        }
+        console.log(`Pushed latest changes for branch: ${branchName}`);
+      } catch (error) {
+        console.error(`Error pulling latest changes for branch: ${branchName}: ${error.message}`);
+        const { confirm } = await inquirer.prompt([
+          {
+            type: 'confirm',
+            name: 'confirm',
+            message: `Do you want to try push latest changes to ${branchName} branch again?`,
+            default: false
+          }
+        ]);
+        tryAgain = confirm;
+        if (!tryAgain) {
+          process.exit(1);
+        }
+      }
+    } while (tryAgain);
+  }
+  return branchesAlreadyUpdated;
+}
+
 // Push the repository to the target organization
 async function pushRepository(repoName) {
   const repoDir = path.join(INPUT_DIR, repoName);
@@ -272,20 +309,11 @@ async function pushRepository(repoName) {
 
     // const pushedBranches = await git.cwd(repoDir).push('origin', '--all');
 
-    
-    let branchesAlreadyUpdated = true;
-    for (const remoteBranchName of remoteBranches) {
-      console.log({ remoteBranchName })
-      await git.cwd(repoDir).checkout(remoteBranchName);
-      const pushedBranches = await git.cwd(repoDir).push('origin', remoteBranchName);
-      if (!(pushedBranches?.pushed?.length <= 0 || pushedBranches.pushed.every(i => i.alreadyUpdated))) {
-        branchesAlreadyUpdated = false;
-      }
-      // console.log({ pushedBranches: pushedBranches.pushed });
-    }
+
+    const branchesAlreadyUpdated = await pushAllLocalBranches(repoDir);
 
     const pushedTags = await git.cwd(repoDir).pushTags('origin');
-    
+
     // console.log({ pushedTags: pushedTags.pushed })
 
     // process.exit(1);
