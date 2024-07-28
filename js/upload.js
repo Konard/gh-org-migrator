@@ -28,7 +28,7 @@ const git = simpleGit();
 // Path to the input data directory
 const INPUT_DIR = path.join(process.cwd(), 'data', SOURCE_ORGANIZATION);
 
-const defaultIntervalMs = 20000;
+const defaultIntervalMs = 30000;
 
 const sleep = async (ms) => await new Promise(resolve => setTimeout(resolve, ms));
 
