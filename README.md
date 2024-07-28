@@ -1,10 +1,31 @@
 # github-organization-migrator
 A tool to migrate organization
 
-# JavaScript version
+# JavaScript version (the only one recommended at the moment)
+
+1. Create .env file:
 
 ```bash
-node js/index.js
+touch .env
+nano .env
+```
+
+```env
+ACCESS_TOKEN=
+SOURCE_ORGANIZATION=deep-foundation
+TARGET_ORGANIZATION=link-foundation
+```
+
+2. Download data from source organization
+
+```bash
+node js/download.js
+```
+
+3. Upload data to target organization
+
+```bash
+node js/upload.js
 ```
 
 # Python dependencies
