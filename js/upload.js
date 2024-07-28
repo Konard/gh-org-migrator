@@ -213,6 +213,7 @@ async function pushAllLocalBranches(repoDir) {
           branchesAlreadyUpdated = false;
         }
         console.log(`Pushed latest changes for branch: ${branchName}`);
+        break;
       } catch (error) {
         console.error(`Error pulling latest changes for branch: ${branchName}: ${error.message}`);
         const { confirm } = await inquirer.prompt([
