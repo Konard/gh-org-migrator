@@ -92,7 +92,7 @@ async function issueExists(repoName, issue) {
     });
     return issues.some(i => i.title === issue.title && i.body === issue.body);
   } catch (error) {
-    console.error(`Error checking issue "${issueTitle}" in repository ${repoName}: ${error.message}`);
+    console.error(`Error checking issue "${issue.title}" in repository ${repoName}: ${error.message}`);
     process.exit(1);
   }
 }
@@ -169,7 +169,7 @@ async function createLocalTrackingBranches(repoDir) {
   const localBranches = await git.cwd(repoDir).branch();
 
   for (const remoteBranch of remoteBranches.all) {
-    console.log({ remoteBranch });
+    // console.log({ remoteBranch });
     if (!remoteBranch.includes('->')) {
       const branchName = remoteBranch.replace('origin/', '');
       if (!localBranches.all.includes(branchName)) {
@@ -202,7 +202,7 @@ async function pushAllLocalBranches(repoDir) {
   let branchesAlreadyUpdated = true;
   const localBranches = await git.branchLocal();
   for (const branchName of localBranches.all) {
-    console.log({ remoteBranchName: branchName })
+    // console.log({ remoteBranchName: branchName })
     await git.cwd(repoDir).checkout(branchName);
 
     let tryAgain = false;
@@ -212,8 +212,12 @@ async function pushAllLocalBranches(repoDir) {
         if (!(pushedBranches?.pushed?.length <= 0 || pushedBranches.pushed.every(i => i.alreadyUpdated))) {
           branchesAlreadyUpdated = false;
         }
-        console.log(`Pushed latest changes for branch: ${branchName}`);
-        break;
+        if (branchesAlreadyUpdated) {
+          console.log(`Branch ${branchName} is already up to date.`);
+        } else {
+          console.log(`Pushed latest changes for branch: ${branchName}`);
+        }
+        tryAgain = false;
       } catch (error) {
         console.error(`Error pulling latest changes for branch: ${branchName}: ${error.message}`);
         const { confirm } = await inquirer.prompt([
@@ -253,71 +257,12 @@ async function pushRepository(repoName) {
 
     await pullAllLocalBranches(repoDir);
 
-    const remoteBranches = await getAllRemoteBranches();
-
-    // console.log({ allRemoteBranches: remoteBranches });
-
-    // // // Check if the branch 'main' exists, if not create it
-    // const branchSummary = await git.cwd(repoDir).branchLocal();
-    // const branchName = branchSummary.current;
-
-    // console.log({ currentBranchName: branchName });
-
-    // console.log({ allLocalBranches: branchSummary.all });
-
-    // const branches = await git.cwd(repoDir).branch();
-
-    // console.log({ allBranches: branches.all });
-
-    // for (const remoteBranchName of remoteBranches) {
-    //   console.log({ operation: 'pull', remoteBranchName })
-    //   if (branchSummary.all.includes(remoteBranchName)) {
-    //     await git.cwd(repoDir).checkout(remoteBranchName);
-    //   } else {
-    //     await git.cwd(repoDir).checkoutLocalBranch(remoteBranchName);
-    //   }
-    //   await git.cwd(repoDir).pull('origin', remoteBranchName, { "--ff-only": null, '--strategy-option': 'theirs' });
-    // }
-
-
-
-
-    // // const branchName = branchSummary.all.includes('main') ? 'main' : (branchSummary.current || 'master');
-
-    // // if (!branchSummary.all.includes(branchName)) {
-    // //   console.log(`Branch ${branchName} not found, creating it...`);
-    // //   await git.cwd(repoDir).checkoutLocalBranch(branchName);
-    // // }
-
-
-    // await git.fetch();
-
-    // const remotes = await git.getRemotes();
-    // for (const remote of remotes) {
-    //   await git.cwd(repoDir).fetch(remote.name);
-    //   console.log(`Successfully fetched all branches from ${remote.name}`);
-
-    //   // await git.cwd(repoDir).pull(remote.name);
-    //   // console.log(`Successfully pulled all branches from ${remote.name}`);
-    // }
-
-    // await git.cwd(repoDir).pull('origin', branchName);
-
     await git.cwd(repoDir).removeRemote('origin');
     await git.cwd(repoDir).addRemote('origin', `https://github.com/${TARGET_ORGANIZATION}/${repoName}.git`);
-
-    // const pushResult = await git.cwd(repoDir).push('origin', branchName);
-
-    // const pushedBranches = await git.cwd(repoDir).push('origin', '--all');
-
 
     const branchesAlreadyUpdated = await pushAllLocalBranches(repoDir);
 
     const pushedTags = await git.cwd(repoDir).pushTags('origin');
-
-    // console.log({ pushedTags: pushedTags.pushed })
-
-    // process.exit(1);
 
     if (branchesAlreadyUpdated && (pushedTags?.pushed?.length <= 0 || pushedTags.pushed.every(i => i.alreadyUpdated))) {
       console.log(`Repository ${repoName} is already up to date.`);
@@ -337,15 +282,15 @@ async function main() {
     const repos = readJSONFromFile(repoFilePath);
 
     // Repos
-    // for (const repo of repos) {
-    //   const repoName = repo.name;
-    //   const exists = await repositoryExists(repoName);
-    //   if (!exists) {
-    //     await createRepository(repo);
-    //   } else {
-    //     console.log(`Repository ${repoName} already exists. Skipping creation.`);
-    //   }
-    // }
+    for (const repo of repos) {
+      const repoName = repo.name;
+      const exists = await repositoryExists(repoName);
+      if (!exists) {
+        await createRepository(repo);
+      } else {
+        console.log(`Repository ${repoName} already exists. Skipping creation.`);
+      }
+    }
 
     // Code commits
     for (const repo of repos) {
