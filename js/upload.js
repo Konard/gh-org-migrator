@@ -209,10 +209,11 @@ async function pushAllLocalBranches(repoDir) {
     do {
       try {
         const pushedBranches = await git.cwd(repoDir).push('origin', branchName);
-        if (!(pushedBranches?.pushed?.length <= 0 || pushedBranches.pushed.every(i => i.alreadyUpdated))) {
+        const currentBranchAlreadyUpdated = pushedBranches?.pushed?.length <= 0 || pushedBranches.pushed.every(i => i.alreadyUpdated);
+        if (!currentBranchAlreadyUpdated) {
           branchesAlreadyUpdated = false;
         }
-        if (branchesAlreadyUpdated) {
+        if (currentBranchAlreadyUpdated) {
           console.log(`Branch ${branchName} is already up to date.`);
         } else {
           console.log(`Pushed latest changes for branch: ${branchName}`);
