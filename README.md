@@ -1,4 +1,4 @@
-# github-organization-migrator
+# gh-org-migrator (GitHub Organization Migrator)
 A tool to migrate organization
 
 # JavaScript version (the only one recommended at the moment)
