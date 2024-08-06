@@ -200,6 +200,9 @@ async function createIssues(repoName, issues) {
           title: issue.title,
           body: issue.body,
         });
+        console.log(
+          `Issue "${issue.title}" in repository ${repoName} is created.`,
+        );
         await sleep(defaultIntervalMs);
       } catch (error) {
         console.error(
@@ -368,24 +371,24 @@ async function main() {
     const repoFilePath = path.join(INPUT_DIR, "org.repos.json");
     const repos = readJSONFromFile(repoFilePath);
 
-    // // Repos
-    // for (const repo of repos) {
-    //   const repoName = repo.name;
-    //   const exists = await repositoryExists(repoName);
-    //   if (!exists) {
-    //     await createRepository(repo);
-    //   } else {
-    //     console.log(
-    //       `Repository ${repoName} already exists. Skipping creation.`,
-    //     );
-    //   }
-    // }
+    // Repos
+    for (const repo of repos) {
+      const repoName = repo.name;
+      const exists = await repositoryExists(repoName);
+      if (!exists) {
+        await createRepository(repo);
+      } else {
+        console.log(
+          `Repository ${repoName} already exists. Skipping creation.`,
+        );
+      }
+    }
 
-    // // Code commits
-    // for (const repo of repos) {
-    //   const repoName = repo.name;
-    //   await pushRepository(repoName);
-    // }
+    // Code commits
+    for (const repo of repos) {
+      const repoName = repo.name;
+      await pushRepository(repoName);
+    }
 
     // Issues
     for (const repo of repos) {
