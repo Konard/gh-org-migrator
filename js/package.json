@@ -1,7 +1,7 @@
 {
-  "name": "github-organization-migrator",
+  "name": "gh-org-migrator",
   "version": "0.0.1",
-  "description": "A tool to fetch GitHub organization repositories and issues",
+  "description": "A tool to pull and push GitHub organization repositories and issues",
   "main": "index.js",
   "type": "module",
   "bin": {
