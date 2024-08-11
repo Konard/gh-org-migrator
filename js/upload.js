@@ -47,7 +47,7 @@ const sleep = async (ms) =>
   await new Promise((resolve) => setTimeout(resolve, ms));
 
 // Utility function to read JSON data from a file
-function readJSONFromFile(filePath) {
+function readJSON(filePath) {
   if (fs.existsSync(filePath)) {
     return JSON.parse(fs.readFileSync(filePath, "utf-8"));
   } else {
@@ -57,18 +57,20 @@ function readJSONFromFile(filePath) {
 }
 
 // Check if a repository exists in the target organization
-async function repositoryExists(repoName) {
+async function repositoryExists(repositoryName) {
   try {
     await octokit.repos.get({
       owner: TARGET_ORGANIZATION,
-      repo: repoName,
+      repo: repositoryName,
     });
     return true;
   } catch (error) {
     if (error.status === 404) {
       return false;
     } else {
-      console.error(`Error checking repository ${repoName}: ${error.message}`);
+      console.error(
+        `Error checking repository ${repositoryName}: ${error.message}`,
+      );
       process.exit(1);
     }
   }
@@ -94,16 +96,18 @@ async function createRepository(repo) {
     await sleep(defaultIntervalMs);
     return response.data;
   } catch (error) {
-    console.error(`Error creating repository ${repoName}: ${error.message}`);
+    console.error(
+      `Error creating repository ${repositoryName}: ${error.message}`,
+    );
     process.exit(1);
   }
 }
 
-async function fetchAllIssues(repoName, page = 1, issues = []) {
-  // console.log({ fetchAllIssues: { repoName } });
+async function fetchAllIssues(repositoryName, page = 1, issues = []) {
+  // console.log({ fetchAllIssues: { repositoryName } });
   const { data: fetchedIssues } = await octokit.issues.listForRepo({
     owner: TARGET_ORGANIZATION,
-    repo: repoName,
+    repo: repositoryName,
     state: "open",
     per_page: 100,
     page,
@@ -113,18 +117,18 @@ async function fetchAllIssues(repoName, page = 1, issues = []) {
 
   if (fetchedIssues.length === 100) {
     // If the current page is full, there might be more issues, so fetch the next page
-    return await fetchAllIssues(repoName, page + 1, issues);
+    return await fetchAllIssues(repositoryName, page + 1, issues);
   } else {
     // All issues fetched
     return issues;
   }
 }
 
-async function getCachedIssues(repoName) {
+async function getCachedIssues(repositoryName) {
   try {
-    // console.log({ getCachedIssues: { repoName } });
+    // console.log({ getCachedIssues: { repositoryName } });
 
-    const key = `${repoName}-issues`;
+    const key = `${repositoryName}-issues`;
     // Check if issues are already cached
     const cachedIssues = await cache.get(key);
     if (cachedIssues) {
@@ -133,7 +137,7 @@ async function getCachedIssues(repoName) {
     }
 
     // If not cached, fetch all issues from GitHub
-    const issues = await fetchAllIssues(repoName);
+    const issues = await fetchAllIssues(repositoryName);
 
     // Cache the fetched issues
     await cache.set(key, issues);
@@ -146,13 +150,13 @@ async function getCachedIssues(repoName) {
 }
 
 // Check if an issue exists in a repository
-async function issueExists(repoName, issue) {
+async function issueExists(repositoryName, issue) {
   try {
-    const issues = await getCachedIssues(repoName);
+    const issues = await getCachedIssues(repositoryName);
     return issues.some((i) => i.title === issue.title && i.body === issue.body);
   } catch (error) {
     console.error(
-      `Error checking issue "${issue.title}" in repository ${repoName}: ${error.message}`,
+      `Error checking issue "${issue.title}" in repository ${repositoryName}: ${error.message}`,
     );
     process.exit(1);
   }
@@ -174,9 +178,9 @@ async function checkRateLimit() {
 }
 
 // Create issues for a given repository with delay and rate limit check
-async function createIssues(repoName, issues) {
+async function createIssues(repositoryName, issues) {
   for (const issue of issues) {
-    const exists = await issueExists(repoName, issue);
+    const exists = await issueExists(repositoryName, issue);
     if (!exists) {
       try {
         const remaining = await checkRateLimit();
@@ -192,27 +196,27 @@ async function createIssues(repoName, issues) {
         }
 
         console.log(
-          `Creating issue "${issue.title}" in repository ${repoName}...`,
+          `Creating issue "${issue.title}" in repository ${repositoryName}...`,
         );
         await octokit.issues.create({
           owner: TARGET_ORGANIZATION,
-          repo: repoName,
+          repo: repositoryName,
           title: issue.title,
           body: issue.body,
         });
         console.log(
-          `Issue "${issue.title}" in repository ${repoName} is created.`,
+          `Issue "${issue.title}" in repository ${repositoryName} is created.`,
         );
         await sleep(defaultIntervalMs);
       } catch (error) {
         console.error(
-          `Error creating issue "${issue.title}" in repository ${repoName}: ${error.message}`,
+          `Error creating issue "${issue.title}" in repository ${repositoryName}: ${error.message}`,
         );
         process.exit(1);
       }
     } else {
       console.log(
-        `Issue "${issue.title}" already exists in repository ${repoName}. Skipping creation.`,
+        `Issue "${issue.title}" already exists in repository ${repositoryName}. Skipping creation.`,
       );
     }
   }
@@ -313,15 +317,15 @@ async function pushAllLocalBranches(repoDir) {
 }
 
 // Push the repository to the target organization
-async function pushRepository(repoName) {
-  const repoDir = path.join(INPUT_DIR, repoName);
+async function pushRepository(repositoryName) {
+  const repoDir = path.join(INPUT_DIR, repositoryName);
   if (!fs.existsSync(repoDir)) {
     console.error(`Repository directory not found: ${repoDir}`);
     process.exit(1);
   }
   try {
     console.log(
-      `Pushing repository ${repoName} to organization ${TARGET_ORGANIZATION}...`,
+      `Pushing repository ${repositoryName} to organization ${TARGET_ORGANIZATION}...`,
     );
 
     await git.cwd(repoDir).removeRemote("origin");
@@ -329,7 +333,7 @@ async function pushRepository(repoName) {
       .cwd(repoDir)
       .addRemote(
         "origin",
-        `https://github.com/${SOURCE_ORGANIZATION}/${repoName}.git`,
+        `https://github.com/${SOURCE_ORGANIZATION}/${repositoryName}.git`,
       );
 
     await fetchAllBranches(repoDir);
@@ -343,7 +347,7 @@ async function pushRepository(repoName) {
       .cwd(repoDir)
       .addRemote(
         "origin",
-        `https://github.com/${TARGET_ORGANIZATION}/${repoName}.git`,
+        `https://github.com/${TARGET_ORGANIZATION}/${repositoryName}.git`,
       );
 
     const branchesAlreadyUpdated = await pushAllLocalBranches(repoDir);
@@ -355,13 +359,15 @@ async function pushRepository(repoName) {
       (pushedTags?.pushed?.length <= 0 ||
         pushedTags.pushed.every((i) => i.alreadyUpdated))
     ) {
-      console.log(`Repository ${repoName} is already up to date.`);
+      console.log(`Repository ${repositoryName} is already up to date.`);
     } else {
-      console.log(`Repository ${repoName} pushed successfully.`);
+      console.log(`Repository ${repositoryName} pushed successfully.`);
       await sleep(defaultIntervalMs);
     }
   } catch (error) {
-    console.error(`Error pushing repository ${repoName}: ${error.message}`);
+    console.error(
+      `Error pushing repository ${repositoryName}: ${error.message}`,
+    );
     process.exit(1);
   }
 }
@@ -369,34 +375,37 @@ async function pushRepository(repoName) {
 async function main() {
   try {
     const repoFilePath = path.join(INPUT_DIR, "org.repos.json");
-    const repos = readJSONFromFile(repoFilePath);
+    const repos = readJSON(repoFilePath);
 
     // Repos
     for (const repo of repos) {
-      const repoName = repo.name;
-      const exists = await repositoryExists(repoName);
+      const repositoryName = repo.name;
+      const exists = await repositoryExists(repositoryName);
       if (!exists) {
         await createRepository(repo);
       } else {
         console.log(
-          `Repository ${repoName} already exists. Skipping creation.`,
+          `Repository ${repositoryName} already exists. Skipping creation.`,
         );
       }
     }
 
     // Code commits
     for (const repo of repos) {
-      const repoName = repo.name;
-      await pushRepository(repoName);
+      const repositoryName = repo.name;
+      await pushRepository(repositoryName);
     }
 
     // Issues
     for (const repo of repos) {
-      const repoName = repo.name;
-      // console.log({ repoName });
-      const issuesFilePath = path.join(INPUT_DIR, `${repoName}.issues.json`);
-      const issues = readJSONFromFile(issuesFilePath);
-      await createIssues(repoName, issues);
+      const repositoryName = repo.name;
+      // console.log({ repositoryName });
+      const issuesFilePath = path.join(
+        INPUT_DIR,
+        `${repositoryName}.issues.json`,
+      );
+      const issues = readJSON(issuesFilePath);
+      await createIssues(repositoryName, issues);
     }
 
     console.log(
