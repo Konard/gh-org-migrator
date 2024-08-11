@@ -5,10 +5,10 @@
   "main": "index.js",
   "type": "module",
   "bin": {
-    "gh-org-pull": "./download.js",
-    "gh-org-push": "./upload.js",
-    "gh-org-push-repos": "./create-repositories.js",
-    "gh-org-rm-repos": "./delete-repositories.js"
+    "gh-org-pull": "./pull.js",
+    "gh-org-push": "./push.js",
+    "gh-org-push-repos": "./push-repositories.js",
+    "gh-org-rm-repos": "./remove-repositories.js"
   },
   "scripts": {
     "start": "node index.js"
