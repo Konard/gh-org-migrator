@@ -7,6 +7,7 @@
   "bin": {
     "gh-org-download": "./download.js",
     "gh-org-upload": "./upload.js",
+    "gh-org-create-repos": "./create-repositories.js",
     "gh-org-delete-repos": "./delete-repositories.js"
   },
   "scripts": {
