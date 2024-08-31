@@ -2,9 +2,9 @@
 
 import { Octokit } from "@octokit/rest";
 import { config } from "dotenv";
-import fs from "fs";
 import path from "path";
 import inquirer from "inquirer";
+import { sleep, readJSON } from "./lib.js";
 
 // Load environment variables
 config();
@@ -25,16 +25,6 @@ const INPUT_DIR = path.join(process.cwd(), "data", SOURCE_ORGANIZATION);
 const octokit = new Octokit({
   auth: ACCESS_TOKEN,
 });
-
-// Utility function to read JSON data from a file
-function readJSON(filePath) {
-  if (fs.existsSync(filePath)) {
-    return JSON.parse(fs.readFileSync(filePath, "utf-8"));
-  } else {
-    console.error(`File not found: ${filePath}`);
-    process.exit(1);
-  }
-}
 
 // // Get all repositories in the source organization
 // async function getSourceRepositories() {
@@ -81,10 +71,12 @@ async function main() {
     const repoFilePath = path.join(INPUT_DIR, "org.repos.json");
     const sourceRepos = readJSON(repoFilePath);
 
-    console.log(`Source Organization: ${SOURCE_ORGANIZATION}`);
-    console.log(`Target Organization: ${TARGET_ORGANIZATION}`);
+    console.log(`Source organization: ${SOURCE_ORGANIZATION}`);
+    console.log(`Target organization: ${TARGET_ORGANIZATION}`);
     console.log(
-      `Repositories to delete: ${sourceRepos.map((repo) => repo.name).join(", ")}`,
+      `Repositories to delete from ${
+        TARGET_ORGANIZATION
+      } organization: ${sourceRepos.map((repo) => repo.name).join(", ")}`,
     );
 
     const { confirm } = await inquirer.prompt([
@@ -104,9 +96,12 @@ async function main() {
 
     for (const repo of sourceRepos) {
       await deleteRepository(repo.name);
+      sleep(1000);
     }
     console.log(
-      `Repositories from ${SOURCE_ORGANIZATION} have been deleted in the ${TARGET_ORGANIZATION} organization.`,
+      `Repositories from ${SOURCE_ORGANIZATION} have been deleted in the ${
+        TARGET_ORGANIZATION
+      } organization.`,
     );
   } catch (error) {
     console.error(`Unexpected error: ${error.message}`);
