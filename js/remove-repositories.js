@@ -96,7 +96,7 @@ async function main() {
 
     for (const repo of sourceRepos) {
       await deleteRepository(repo.name);
-      sleep(1000);
+      sleep(3000);
     }
     console.log(
       `Repositories from ${SOURCE_ORGANIZATION} have been deleted in the ${
