@@ -11,3 +11,6 @@ node_modules
 
 # rust
 target
+
+# app logs
+*.log.txt
