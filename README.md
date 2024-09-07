@@ -28,6 +28,36 @@ node js/download.js
 node js/upload.js
 ```
 
+## Push repositories
+
+```bash
+node ./js/push-repositories.js 2>&1 | tee push-repositories.log.txt
+```
+
+```bash
+node ./js/push-repositories.js > >(tee -a push-repositories.stdout.log.txt) 2> >(tee -a push-repositories.stderr.log.txt >&2)
+```
+
+## Push issues
+
+```bash
+node ./js/push-issues.js 2>&1 | tee push-issues.log.txt
+```
+
+```bash
+node ./js/push-issues.js > >(tee -a push-issues.stdout.log.txt) 2> >(tee -a push-issues.stderr.log.txt >&2)
+```
+
+## Push code commits
+
+```bash
+node ./js/push-code-commits.js 2>&1 | tee push-code-commits.log.txt
+```
+
+```bash
+node ./js/push-code-commits.js > >(tee -a push-code-commits.stdout.log.txt) 2> >(tee -a push-code-commits.stderr.log.txt >&2)
+```
+
 # Python dependencies
 
 ```bash
