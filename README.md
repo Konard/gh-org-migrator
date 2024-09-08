@@ -12,6 +12,7 @@ nano .env
 
 ```env
 GITHUB_ACCESS_TOKEN=
+GITFLIC_ACCESS_TOKEN=
 SOURCE_ORGANIZATION=deep-foundation
 TARGET_ORGANIZATION=link-foundation
 ```
@@ -36,6 +37,16 @@ node ./js/push-repositories.js 2>&1 | tee push-repositories.log.txt
 
 ```bash
 node ./js/push-repositories.js > >(tee -a push-repositories.stdout.log.txt) 2> >(tee -a push-repositories.stderr.log.txt >&2)
+```
+
+## Push repositories to GitFlic
+
+```bash
+node ./js/push-repositories-to-gitflic.js 2>&1 | tee push-repositories-to-gitflic.log.txt
+```
+
+```bash
+node ./js/push-repositories-to-gitflic.js > >(tee -a push-repositories-to-gitflic.stdout.log.txt) 2> >(tee -a push-repositories-to-gitflic.stderr.log.txt >&2)
 ```
 
 ## Push issues
