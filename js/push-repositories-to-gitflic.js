@@ -5,7 +5,6 @@ import path from "path";
 import { config } from "dotenv";
 import { readJSON, sleep } from "./lib.js";
 
-// Load environment variables
 config();
 
 const { GITFLIC_ACCESS_TOKEN, SOURCE_ORGANIZATION, TARGET_ORGANIZATION } = process.env;
@@ -17,12 +16,12 @@ if (!GITFLIC_ACCESS_TOKEN || !SOURCE_ORGANIZATION || !TARGET_ORGANIZATION) {
   process.exit(1);
 }
 
-// GitFlic API base URL
 const GITFLIC_API_URL = "https://api.gitflic.ru";
+
 const INPUT_DIR = path.join(process.cwd(), "data", SOURCE_ORGANIZATION);
+
 const defaultIntervalMs = 30000;
 
-// Check if a repository exists in the target organization
 async function repositoryExists(repositoryName) {
   try {
     const response = await axios.get(
@@ -31,9 +30,10 @@ async function repositoryExists(repositoryName) {
         headers: { Authorization: `token ${GITFLIC_ACCESS_TOKEN}` },
       }
     );
-    return response.data && response.data.name === repositoryName;
+    const repository = response.data;
+    return repository.alias === repositoryName;
   } catch (error) {
-    if (error.response && error.response.status === 404) {
+    if (error.status === 404) {
       return false;
     } else {
       console.error(
@@ -44,7 +44,6 @@ async function repositoryExists(repositoryName) {
   }
 }
 
-// Create a repository in the target organization
 async function createRepository(repo) {
   try {
     console.log(
@@ -53,16 +52,21 @@ async function createRepository(repo) {
     const response = await axios.post(
       `${GITFLIC_API_URL}/project`,
       {
-        title: repo.name,
-        isPrivate: repo.private,
-        description: repo.description,
         ownerAlias: TARGET_ORGANIZATION,
         ownerAliasType: "COMPANY",
+        title: repo.name,
+        alias: repo.name,
+        isPrivate: repo.private,
+        description: repo.description,
+        language: repo.language,
       },
       {
-        headers: { Authorization: `token ${GITFLIC_ACCESS_TOKEN}` },
+        headers: {
+          Authorization: `token ${GITFLIC_ACCESS_TOKEN}`,
+        },
       }
     );
+    console.log(`Repository ${repo.name} in organization ${TARGET_ORGANIZATION} on GitFlic is created.`);
     await sleep(defaultIntervalMs);
     return response.data;
   } catch (error) {
