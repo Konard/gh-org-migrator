@@ -9,10 +9,10 @@ use serde_json::to_string_pretty;
 async fn main() {
     dotenv().ok();
 
-    let access_token = env::var("ACCESS_TOKEN").expect("ACCESS_TOKEN must be set in .env file.");
+    let GITHUB_ACCESS_TOKEN = env::var("GITHUB_ACCESS_TOKEN").expect("GITHUB_ACCESS_TOKEN must be set in .env file.");
     let organization = env::var("ORGANIZATION").expect("ORGANIZATION must be set in .env file.");
 
-    let octocrab = Octocrab::builder().personal_token(access_token).build().unwrap();
+    let octocrab = Octocrab::builder().personal_token(GITHUB_ACCESS_TOKEN).build().unwrap();
 
     let output_dir = format!("{}/data/{}", env::current_dir().unwrap().display(), &organization);
     fs::create_dir_all(&output_dir).expect("Failed to create output directory.");

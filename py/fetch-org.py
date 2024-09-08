@@ -6,15 +6,15 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-ACCESS_TOKEN = os.getenv('ACCESS_TOKEN')
+GITHUB_ACCESS_TOKEN = os.getenv('GITHUB_ACCESS_TOKEN')
 ORGANIZATION = os.getenv('ORGANIZATION')
 
-if not ACCESS_TOKEN or not ORGANIZATION:
-    print("ACCESS_TOKEN and ORGANIZATION must be set in the .env file.")
+if not GITHUB_ACCESS_TOKEN or not ORGANIZATION:
+    print("GITHUB_ACCESS_TOKEN and ORGANIZATION must be set in the .env file.")
     exit(1)
 
 # Initialize PyGitHub
-g = Github(ACCESS_TOKEN)
+g = Github(GITHUB_ACCESS_TOKEN)
 
 # Create a directory to store the output
 OUTPUT_DIR = os.path.join(os.getcwd(), 'data', ORGANIZATION)

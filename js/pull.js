@@ -9,18 +9,18 @@ import simpleGit from "simple-git";
 // Load environment variables
 config();
 
-const { ACCESS_TOKEN, SOURCE_ORGANIZATION } = process.env;
+const { GITHUB_ACCESS_TOKEN, SOURCE_ORGANIZATION } = process.env;
 
-if (!ACCESS_TOKEN || !SOURCE_ORGANIZATION) {
+if (!GITHUB_ACCESS_TOKEN || !SOURCE_ORGANIZATION) {
   console.error(
-    "ACCESS_TOKEN and SOURCE_ORGANIZATION must be set in the .env file.",
+    "GITHUB_ACCESS_TOKEN and SOURCE_ORGANIZATION must be set in the .env file.",
   );
   process.exit(1);
 }
 
 // Initialize Octokit
 const octokit = new Octokit({
-  auth: ACCESS_TOKEN,
+  auth: GITHUB_ACCESS_TOKEN,
 });
 
 // Initialize simple-git

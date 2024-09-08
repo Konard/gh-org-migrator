@@ -9,11 +9,11 @@ import { sleep, readJSON } from "./lib.js";
 // Load environment variables
 config();
 
-const { ACCESS_TOKEN, SOURCE_ORGANIZATION, TARGET_ORGANIZATION } = process.env;
+const { GITHUB_ACCESS_TOKEN, SOURCE_ORGANIZATION, TARGET_ORGANIZATION } = process.env;
 
-if (!ACCESS_TOKEN || !SOURCE_ORGANIZATION || !TARGET_ORGANIZATION) {
+if (!GITHUB_ACCESS_TOKEN || !SOURCE_ORGANIZATION || !TARGET_ORGANIZATION) {
   console.error(
-    "ACCESS_TOKEN, SOURCE_ORGANIZATION, and TARGET_ORGANIZATION must be set in the .env file.",
+    "GITHUB_ACCESS_TOKEN, SOURCE_ORGANIZATION, and TARGET_ORGANIZATION must be set in the .env file.",
   );
   process.exit(1);
 }
@@ -23,7 +23,7 @@ const INPUT_DIR = path.join(process.cwd(), "data", SOURCE_ORGANIZATION);
 
 // Initialize Octokit
 const octokit = new Octokit({
-  auth: ACCESS_TOKEN,
+  auth: GITHUB_ACCESS_TOKEN,
 });
 
 // // Get all repositories in the source organization

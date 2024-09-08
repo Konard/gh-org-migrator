@@ -11,7 +11,7 @@ nano .env
 ```
 
 ```env
-ACCESS_TOKEN=
+GITHUB_ACCESS_TOKEN=
 SOURCE_ORGANIZATION=deep-foundation
 TARGET_ORGANIZATION=link-foundation
 ```

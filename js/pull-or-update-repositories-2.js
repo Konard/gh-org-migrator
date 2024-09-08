@@ -6,14 +6,14 @@ import path from 'path';
 import { config } from 'dotenv';
 config();
 
-const { ACCESS_TOKEN, ORGANIZATION } = process.env;
+const { GITHUB_ACCESS_TOKEN, ORGANIZATION } = process.env;
 
-if (!ACCESS_TOKEN || !ORGANIZATION) {
-  console.error("ACCESS_TOKEN and ORGANIZATION must be set in the .env file.");
+if (!GITHUB_ACCESS_TOKEN || !ORGANIZATION) {
+  console.error("GITHUB_ACCESS_TOKEN and ORGANIZATION must be set in the .env file.");
   process.exit(1);
 }
 
-const octokit = new Octokit({ auth: ACCESS_TOKEN });
+const octokit = new Octokit({ auth: GITHUB_ACCESS_TOKEN });
 
 const OUTPUT_DIR = path.join(process.cwd(), 'data', ORGANIZATION);
 if (!fs.existsSync(OUTPUT_DIR)) {
