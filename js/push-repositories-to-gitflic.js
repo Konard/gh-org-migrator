@@ -20,17 +20,19 @@ const GITFLIC_API_URL = "https://api.gitflic.ru";
 
 const INPUT_DIR = path.join(process.cwd(), "data", SOURCE_ORGANIZATION);
 
-const defaultIntervalMs = 30000;
+const defaultIntervalMs = 60000;
+const checkRepositoryIntervalMs = 3000;
 
 async function repositoryExists(repositoryName) {
+  const updatedName = gitFlicifyRepositoryName(repositoryName);
   try {
-    const updatedName = gitFlicifyRepositoryName(repositoryName);
     const response = await axios.get(
       `${GITFLIC_API_URL}/project/${TARGET_ORGANIZATION}/${updatedName}`,
       {
         headers: { Authorization: `token ${GITFLIC_ACCESS_TOKEN}` },
       }
     );
+    await sleep(checkRepositoryIntervalMs);
     const repository = response.data;
     return repository.alias === updatedName;
   } catch (error) {
@@ -46,8 +48,8 @@ async function repositoryExists(repositoryName) {
 }
 
 async function createRepository(repo) {
+  const updatedName = gitFlicifyRepositoryName(repo.name);
   try {
-    const updatedName = gitFlicifyRepositoryName(repo.name);
     console.log(
       `Creating repository ${updatedName} in organization ${TARGET_ORGANIZATION} on GitFlic...`,
     );
