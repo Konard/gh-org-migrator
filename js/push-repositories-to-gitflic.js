@@ -49,13 +49,15 @@ async function createRepository(repo) {
     console.log(
       `Creating repository ${repo.name} in organization ${TARGET_ORGANIZATION} on GitFlic...`,
     );
+    const updatedName = repo.name.replaceAll(/[^a-zа-я_\-]/gi, '-');
+    console.log('updatedName', updatedName);
     const response = await axios.post(
       `${GITFLIC_API_URL}/project`,
       {
         ownerAlias: TARGET_ORGANIZATION,
         ownerAliasType: "COMPANY",
-        title: repo.name,
-        alias: repo.name,
+        title: updatedName,
+        alias: updatedName,
         isPrivate: repo.private,
         description: repo.description,
         language: repo.language,
