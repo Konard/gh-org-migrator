@@ -3,7 +3,7 @@
 import axios from "axios";
 import path from "path";
 import { config } from "dotenv";
-import { readJSON, sleep } from "./lib.js";
+import { gitFlicifyRepositoryName, readJSON, sleep } from "./lib.js";
 
 config();
 
@@ -24,20 +24,21 @@ const defaultIntervalMs = 30000;
 
 async function repositoryExists(repositoryName) {
   try {
+    const updatedName = gitFlicifyRepositoryName(repositoryName);
     const response = await axios.get(
-      `${GITFLIC_API_URL}/project/${TARGET_ORGANIZATION}/${repositoryName}`,
+      `${GITFLIC_API_URL}/project/${TARGET_ORGANIZATION}/${updatedName}`,
       {
         headers: { Authorization: `token ${GITFLIC_ACCESS_TOKEN}` },
       }
     );
     const repository = response.data;
-    return repository.alias === repositoryName;
+    return repository.alias === updatedName;
   } catch (error) {
     if (error.status === 404) {
       return false;
     } else {
       console.error(
-        `Error checking repository ${repositoryName}: ${error.message}`,
+        `Error checking repository ${updatedName}: ${error.message}`,
       );
       process.exit(1);
     }
@@ -46,11 +47,10 @@ async function repositoryExists(repositoryName) {
 
 async function createRepository(repo) {
   try {
+    const updatedName = gitFlicifyRepositoryName(repo.name);
     console.log(
-      `Creating repository ${repo.name} in organization ${TARGET_ORGANIZATION} on GitFlic...`,
+      `Creating repository ${updatedName} in organization ${TARGET_ORGANIZATION} on GitFlic...`,
     );
-    const updatedName = repo.name.replaceAll(/[^a-zа-я_\-]/gi, '-');
-    console.log('updatedName', updatedName);
     const response = await axios.post(
       `${GITFLIC_API_URL}/project`,
       {
@@ -68,11 +68,11 @@ async function createRepository(repo) {
         },
       }
     );
-    console.log(`Repository ${repo.name} in organization ${TARGET_ORGANIZATION} on GitFlic is created.`);
+    console.log(`Repository ${updatedName} in organization ${TARGET_ORGANIZATION} on GitFlic is created.`);
     await sleep(defaultIntervalMs);
     return response.data;
   } catch (error) {
-    console.error(`Error creating repository ${repo.name}: ${error.message}`);
+    console.error(`Error creating repository ${updatedName}: ${error.message}`);
     process.exit(1);
   }
 }
