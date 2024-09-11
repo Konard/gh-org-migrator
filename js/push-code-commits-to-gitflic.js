@@ -5,7 +5,7 @@ import path from "path";
 import { config } from "dotenv";
 import simpleGit from "simple-git";
 import inquirer from "inquirer";
-import { sleep, readJSON } from "./lib.js";
+import { sleep, readJSON, gitFlicifyRepositoryName } from "./lib.js";
 
 // Load environment variables
 config();
@@ -147,12 +147,14 @@ async function pushRepository(repositoryName) {
 
     await pullAllLocalBranches(repoDir);
 
+    const updatedRepositoryName = gitFlicifyRepositoryName(repositoryName);
+
     await git.cwd(repoDir).removeRemote("origin");
     await git
       .cwd(repoDir)
       .addRemote(
         "origin",
-        `https://github.com/${TARGET_ORGANIZATION}/${repositoryName}.git`,
+        `https://gitflic.ru/project/${TARGET_ORGANIZATION}/${updatedRepositoryName}.git`,
       );
 
     const branchesAlreadyUpdated = await pushAllLocalBranches(repoDir);
@@ -164,14 +166,14 @@ async function pushRepository(repositoryName) {
       (pushedTags?.pushed?.length <= 0 ||
         pushedTags.pushed.every((i) => i.alreadyUpdated))
     ) {
-      console.log(`Repository ${repositoryName} is already up to date.`);
+      console.log(`Repository ${updatedRepositoryName} is already up to date.`);
     } else {
-      console.log(`Repository ${repositoryName} pushed successfully.`);
+      console.log(`Repository ${updatedRepositoryName} pushed successfully.`);
       await sleep(defaultIntervalMs);
     }
   } catch (error) {
     console.error(
-      `Error pushing repository ${repositoryName}: ${error.message}`,
+      `Error pushing repository ${updatedRepositoryName}: ${error.message}`,
     );
     process.exit(1);
   }
