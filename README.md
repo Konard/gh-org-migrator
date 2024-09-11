@@ -69,6 +69,16 @@ node ./js/push-code-commits.js 2>&1 | tee push-code-commits.log.txt
 node ./js/push-code-commits.js > >(tee -a push-code-commits.stdout.log.txt) 2> >(tee -a push-code-commits.stderr.log.txt >&2)
 ```
 
+## Push code commits to GitFlic
+
+```bash
+node ./js/push-code-commits-to-gitflic.js 2>&1 | tee push-code-commits-to-gitflic.log.txt
+```
+
+```bash
+node ./js/push-code-commits-to-gitflic.js > >(tee -a push-code-commits-to-gitflic.stdout.log.txt) 2> >(tee -a push-code-commits-to-gitflic.stderr.log.txt >&2)
+```
+
 # Python dependencies
 
 ```bash
