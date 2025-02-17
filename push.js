@@ -150,16 +150,29 @@ async function getCachedIssues(repositoryName) {
 }
 
 // Check if an issue exists in a repository
-async function issueExists(repositoryName, issue) {
+async function issueExists(repositoryName, title, body) {
   try {
     const issues = await getCachedIssues(repositoryName);
-    return issues.some((i) => i.title === issue.title && i.body === issue.body);
+    return issues.some((i) => i.title === title && ((i.body || '').trim() === (body || '').trim()));
   } catch (error) {
     console.error(
       `Error checking issue "${issue.title}" in repository ${repositoryName}: ${error.message}`,
     );
     process.exit(1);
   }
+}
+
+function makeBodyWithSourceLink(issue) {
+  let newBody;
+  if (issue?.body?.trim?.()?.length > 0) {
+    newBody = `${issue.body}
+
+---
+Forked from ${issue.html_url} by https://github.com/konard/gh-org-migrator`;
+  } else {
+    newBody = `Forked from ${issue.html_url} by https://github.com/konard/gh-org-migrator`;
+  }
+  return newBody;
 }
 
 // Check the rate limit status
@@ -180,7 +193,8 @@ async function checkRateLimit() {
 // Create issues for a given repository with delay and rate limit check
 async function createIssues(repositoryName, issues) {
   for (const issue of issues) {
-    const exists = await issueExists(repositoryName, issue);
+    const body = makeBodyWithSourceLink(issue);
+    const exists = await issueExists(repositoryName, issue.title, body);
     if (!exists) {
       try {
         const remaining = await checkRateLimit();
@@ -202,7 +216,7 @@ async function createIssues(repositoryName, issues) {
           owner: TARGET_ORGANIZATION,
           repo: repositoryName,
           title: issue.title,
-          body: issue.body,
+          body,
         });
         console.log(
           `Issue "${issue.title}" in repository ${repositoryName} is created.`,

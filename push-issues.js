@@ -110,14 +110,40 @@ Forked from ${issue.html_url} by https://github.com/konard/gh-org-migrator`;
   return newBody;
 }
 
+// Check the rate limit status
+async function checkRateLimit() {
+  try {
+    const response = await octokit.rateLimit.get();
+    const rateLimit = response.data.resources.core;
+    console.log(
+      `Rate limit: ${rateLimit.remaining}/${rateLimit.limit}, resets at ${new Date(rateLimit.reset * 1000)}`,
+    );
+    return rateLimit.remaining;
+  } catch (error) {
+    console.error(`Error checking rate limit: ${error.message}`);
+    process.exit(1);
+  }
+}
+
 // Create issues for a given repository with delay and rate limit check
 async function createIssues(repositoryName, issues) {
   for (const issue of issues) {
-    // console.log("issue.html_url", issue.html_url);
     const body = makeBodyWithSourceLink(issue);
     const exists = await issueExists(repositoryName, issue.title, body);
     if (!exists) {
       try {
+        const remaining = await checkRateLimit();
+        if (remaining < 10) {
+          const waitTime =
+            new Date(response.headers["x-ratelimit-reset"] * 1000).getTime() -
+            new Date().getTime() +
+            10000;
+          console.log(
+            `Low rate limit remaining (${remaining}). Waiting until rate limit resets...`,
+          );
+          await sleep(waitTime);
+        }
+
         console.log(
           `Creating issue "${issue.title}" in repository ${repositoryName}...`,
         );

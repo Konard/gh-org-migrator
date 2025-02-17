@@ -3,6 +3,12 @@ A tool to migrate organization
 
 # JavaScript version (the only one recommended at the moment)
 
+0. Install dependencies
+
+```bash
+yarn
+```
+
 1. Create .env file:
 
 ```bash
@@ -20,13 +26,13 @@ TARGET_ORGANIZATION=link-foundation
 2. Download data from source organization
 
 ```bash
-node download.js
+node pull.js
 ```
 
 3. Upload data to target organization
 
 ```bash
-node upload.js
+node push.js
 ```
 
 ## Push repositories
