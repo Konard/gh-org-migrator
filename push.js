@@ -7,6 +7,7 @@ import { config } from "dotenv";
 import simpleGit from "simple-git";
 import inquirer from "inquirer";
 import { createCache, memoryStore } from "cache-manager";
+import { createIssuesForAllRepositories } from "./push-issues.js";
 
 const second = 1000;
 const minute = 60 * second;
@@ -100,139 +101,6 @@ async function createRepository(repo) {
       `Error creating repository ${repositoryName}: ${error.message}`,
     );
     process.exit(1);
-  }
-}
-
-async function fetchAllIssues(repositoryName, page = 1, issues = []) {
-  // console.log({ fetchAllIssues: { repositoryName } });
-  const { data: fetchedIssues } = await octokit.issues.listForRepo({
-    owner: TARGET_ORGANIZATION,
-    repo: repositoryName,
-    state: "open",
-    per_page: 100,
-    page,
-  });
-
-  issues = issues.concat(fetchedIssues);
-
-  if (fetchedIssues.length === 100) {
-    // If the current page is full, there might be more issues, so fetch the next page
-    return await fetchAllIssues(repositoryName, page + 1, issues);
-  } else {
-    // All issues fetched
-    return issues;
-  }
-}
-
-async function getCachedIssues(repositoryName) {
-  try {
-    // console.log({ getCachedIssues: { repositoryName } });
-
-    const key = `${repositoryName}-issues`;
-    // Check if issues are already cached
-    const cachedIssues = await cache.get(key);
-    if (cachedIssues) {
-      // console.log("Returning cached issues");
-      return cachedIssues;
-    }
-
-    // If not cached, fetch all issues from GitHub
-    const issues = await fetchAllIssues(repositoryName);
-
-    // Cache the fetched issues
-    await cache.set(key, issues);
-    // console.log("Fetched and cached issues from GitHub");
-    return issues;
-  } catch (error) {
-    console.error("Error fetching issues from GitHub:", error);
-    throw error;
-  }
-}
-
-// Check if an issue exists in a repository
-async function issueExists(repositoryName, title, body) {
-  try {
-    const issues = await getCachedIssues(repositoryName);
-    return issues.some((i) => i.title === title && ((i.body || '').trim() === (body || '').trim()));
-  } catch (error) {
-    console.error(
-      `Error checking issue "${issue.title}" in repository ${repositoryName}: ${error.message}`,
-    );
-    process.exit(1);
-  }
-}
-
-function makeBodyWithSourceLink(issue) {
-  let newBody;
-  if (issue?.body?.trim?.()?.length > 0) {
-    newBody = `${issue.body}
-
----
-Forked from ${issue.html_url} by https://github.com/konard/gh-org-migrator`;
-  } else {
-    newBody = `Forked from ${issue.html_url} by https://github.com/konard/gh-org-migrator`;
-  }
-  return newBody;
-}
-
-// Check the rate limit status
-async function checkRateLimit() {
-  try {
-    const response = await octokit.rateLimit.get();
-    const rateLimit = response.data.resources.core;
-    console.log(
-      `Rate limit: ${rateLimit.remaining}/${rateLimit.limit}, resets at ${new Date(rateLimit.reset * 1000)}`,
-    );
-    return rateLimit.remaining;
-  } catch (error) {
-    console.error(`Error checking rate limit: ${error.message}`);
-    process.exit(1);
-  }
-}
-
-// Create issues for a given repository with delay and rate limit check
-async function createIssues(repositoryName, issues) {
-  for (const issue of issues) {
-    const body = makeBodyWithSourceLink(issue);
-    const exists = await issueExists(repositoryName, issue.title, body);
-    if (!exists) {
-      try {
-        const remaining = await checkRateLimit();
-        if (remaining < 10) {
-          const waitTime =
-            new Date(response.headers["x-ratelimit-reset"] * 1000).getTime() -
-            new Date().getTime() +
-            10000;
-          console.log(
-            `Low rate limit remaining (${remaining}). Waiting until rate limit resets...`,
-          );
-          await sleep(waitTime);
-        }
-
-        console.log(
-          `Creating issue "${issue.title}" in repository ${repositoryName}...`,
-        );
-        await octokit.issues.create({
-          owner: TARGET_ORGANIZATION,
-          repo: repositoryName,
-          title: issue.title,
-          body,
-        });
-        console.log(
-          `Issue "${issue.title}" in repository ${repositoryName} is created.`,
-        );
-        await sleep(defaultIntervalMs);
-      } catch (error) {
-        console.error(
-          `Error creating issue "${issue.title}" in repository ${repositoryName}: ${error.message}`,
-        );
-        process.exit(1);
-      }
-    } else {
-      console.log(
-        `Issue "${issue.title}" already exists in repository ${repositoryName}. Skipping creation.`,
-      );
-    }
   }
 }
 
@@ -411,16 +279,7 @@ async function main() {
     }
 
     // Issues
-    for (const repo of repos) {
-      const repositoryName = repo.name;
-      // console.log({ repositoryName });
-      const issuesFilePath = path.join(
-        INPUT_DIR,
-        `${repositoryName}.issues.json`,
-      );
-      const issues = readJSON(issuesFilePath);
-      await createIssues(repositoryName, issues);
-    }
+    await createIssuesForAllRepositories(repos);
 
     console.log(
       `Data uploading completed. All data is uploaded to the ${TARGET_ORGANIZATION} organization.`,

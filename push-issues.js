@@ -38,7 +38,7 @@ const INPUT_DIR = path.join(process.cwd(), "data", SOURCE_ORGANIZATION);
 
 const defaultIntervalMs = 30000;
 
-async function fetchAllIssues(repositoryName, page = 1, issues = []) {
+export async function fetchAllIssues(repositoryName, page = 1, issues = []) {
   // console.log({ fetchAllIssues: { repositoryName } });
   const { data: fetchedIssues } = await octokit.issues.listForRepo({
     owner: TARGET_ORGANIZATION,
@@ -59,7 +59,7 @@ async function fetchAllIssues(repositoryName, page = 1, issues = []) {
   }
 }
 
-async function getCachedIssues(repositoryName) {
+export async function getCachedIssues(repositoryName) {
   try {
     // console.log({ getCachedIssues: { repositoryName } });
 
@@ -85,7 +85,7 @@ async function getCachedIssues(repositoryName) {
 }
 
 // Check if an issue exists in a repository
-async function issueExists(repositoryName, title, body) {
+export async function issueExists(repositoryName, title, body) {
   try {
     const issues = await getCachedIssues(repositoryName);
     return issues.some((i) => i.title === title && ((i.body || '').trim() === (body || '').trim()));
@@ -97,7 +97,7 @@ async function issueExists(repositoryName, title, body) {
   }
 }
 
-function makeBodyWithSourceLink(issue) {
+export function makeBodyWithSourceLink(issue) {
   let newBody;
   if (issue?.body?.trim?.()?.length > 0) {
     newBody = `${issue.body}
@@ -111,7 +111,7 @@ Forked from ${issue.html_url} by https://github.com/konard/gh-org-migrator`;
 }
 
 // Check the rate limit status
-async function checkRateLimit() {
+export async function checkRateLimit() {
   try {
     const response = await octokit.rateLimit.get();
     const rateLimit = response.data.resources.core;
@@ -126,7 +126,7 @@ async function checkRateLimit() {
 }
 
 // Create issues for a given repository with delay and rate limit check
-async function createIssues(repositoryName, issues) {
+export async function createIssues(repositoryName, issues) {
   for (const issue of issues) {
     const body = makeBodyWithSourceLink(issue);
     const exists = await issueExists(repositoryName, issue.title, body);
@@ -171,22 +171,21 @@ async function createIssues(repositoryName, issues) {
   }
 }
 
+export async function createIssuesForAllRepositories(repos) {
+  for (const repo of repos) {
+    const repositoryName = repo.name;
+    const issuesFilePath = path.join(INPUT_DIR, `${repositoryName}.issues.json`);
+    const issues = readJSON(issuesFilePath);
+    await createIssues(repositoryName, issues);
+  }
+}
+
 async function main() {
   try {
     const repoFilePath = path.join(INPUT_DIR, "org.repos.json");
     const repos = readJSON(repoFilePath);
 
-    // Issues
-    for (const repo of repos) {
-      const repositoryName = repo.name;
-      // console.log({ repositoryName });
-      const issuesFilePath = path.join(
-        INPUT_DIR,
-        `${repositoryName}.issues.json`,
-      );
-      const issues = readJSON(issuesFilePath);
-      await createIssues(repositoryName, issues);
-    }
+    await createIssuesForAllRepositories(repos);
 
     console.log(
       `Issues pushing completed. All issues are uploaded to the ${TARGET_ORGANIZATION} organization.`,
@@ -197,4 +196,7 @@ async function main() {
   }
 }
 
-main();
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main();
+}
+
