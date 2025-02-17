@@ -171,7 +171,7 @@ export async function createIssues(repositoryName, issues) {
   }
 }
 
-export async function createIssuesForAllRepositories(repos) {
+export async function pushIssuesForAllRepositories(repos) {
   for (const repo of repos) {
     const repositoryName = repo.name;
     const issuesFilePath = path.join(INPUT_DIR, `${repositoryName}.issues.json`);
@@ -185,7 +185,7 @@ async function main() {
     const repoFilePath = path.join(INPUT_DIR, "org.repos.json");
     const repos = readJSON(repoFilePath);
 
-    await createIssuesForAllRepositories(repos);
+    await pushIssuesForAllRepositories(repos);
 
     console.log(
       `Issues pushing completed. All issues are uploaded to the ${TARGET_ORGANIZATION} organization.`,
@@ -199,4 +199,3 @@ async function main() {
 if (import.meta.url === `file://${process.argv[1]}`) {
   main();
 }
-

@@ -28,13 +28,13 @@ const INPUT_DIR = path.join(process.cwd(), "data", SOURCE_ORGANIZATION);
 const defaultIntervalMs = 30000;
 
 // Fetch all branches
-async function fetchAllBranches(repoDir) {
+export async function fetchAllBranches(repoDir) {
   return await git.cwd(repoDir).fetch(["--all"]);
   // await git.cwd(repoDir).fetch('origin');
 }
 
 // List remote branches and create local tracking branches
-async function createLocalTrackingBranches(repoDir) {
+export async function createLocalTrackingBranches(repoDir) {
   const remoteBranches = await git.cwd(repoDir).branch(["-r"]);
   const localBranches = await git.cwd(repoDir).branch();
 
@@ -56,7 +56,7 @@ async function createLocalTrackingBranches(repoDir) {
 }
 
 // Pull all local branches
-async function pullAllLocalBranches(repoDir) {
+export async function pullAllLocalBranches(repoDir) {
   const localBranches = await git.branchLocal();
   for (const branch of localBranches.all) {
     await git.cwd(repoDir).checkout(branch);
@@ -74,7 +74,7 @@ async function pullAllLocalBranches(repoDir) {
 }
 
 // Push all local branches
-async function pushAllLocalBranches(repoDir) {
+export async function pushAllLocalBranches(repoDir) {
   let branchesAlreadyUpdated = true;
   const localBranches = await git.branchLocal();
   for (const branchName of localBranches.all) {
@@ -122,7 +122,7 @@ async function pushAllLocalBranches(repoDir) {
 }
 
 // Push the repository to the target organization
-async function pushRepository(repositoryName) {
+export async function pushCodeChangesForRepository(repositoryName) {
   const repoDir = path.join(INPUT_DIR, repositoryName);
   if (!fs.existsSync(repoDir)) {
     console.error(`Repository directory not found: ${repoDir}`);
@@ -177,16 +177,20 @@ async function pushRepository(repositoryName) {
   }
 }
 
+export async function pushCodeChangesForAllRepositories(repos) {
+  for (const repo of repos) {
+    const repositoryName = repo.name;
+    await pushCodeChangesForRepository(repositoryName);
+  }
+}
+
 async function main() {
   try {
     const repoFilePath = path.join(INPUT_DIR, "org.repos.json");
     const repos = readJSON(repoFilePath);
 
     // Code commits
-    for (const repo of repos) {
-      const repositoryName = repo.name;
-      await pushRepository(repositoryName);
-    }
+    await pushCodeChangesForAllRepositories(repos);
 
     console.log(
       `Data uploading completed. All data is uploaded to the ${TARGET_ORGANIZATION} organization.`,
@@ -197,4 +201,6 @@ async function main() {
   }
 }
 
-main();
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main();
+}

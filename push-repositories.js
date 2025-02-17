@@ -24,7 +24,7 @@ const INPUT_DIR = path.join(process.cwd(), "data", SOURCE_ORGANIZATION);
 
 const defaultIntervalMs = 30000;
 
-async function repositoryExists(repositoryName) {
+export async function repositoryExists(repositoryName) {
   try {
     const response = await octokit.repos.get({
       owner: TARGET_ORGANIZATION,
@@ -44,7 +44,7 @@ async function repositoryExists(repositoryName) {
   }
 }
 
-async function createRepository(repo) {
+export async function createRepository(repo) {
   try {
     console.log(
       `Creating repository ${repo.name} in organization ${TARGET_ORGANIZATION} on GitHub...`,
@@ -64,8 +64,20 @@ async function createRepository(repo) {
     await sleep(defaultIntervalMs);
     return response.data;
   } catch (error) {
-    console.error(`Error creating repository ${repo.name}: ${error.message}`);
+    console.error(`Error creating repository ${repo.name} on GitHub: ${error.message}`);
     process.exit(1);
+  }
+}
+
+export async function pushAllRepositories(repos) {
+  for (const repo of repos) {
+    const repositoryName = repo.name;
+    const exists = await repositoryExists(repositoryName);
+    if (!exists) {
+      await createRepository(repo);
+    } else {
+      console.log(`Repository ${repositoryName} already exists on GitHub. Skipping creation.`);
+    }
   }
 }
 
@@ -73,17 +85,7 @@ async function main() {
   try {
     const repoFilePath = path.join(INPUT_DIR, "org.repos.json");
     const repos = readJSON(repoFilePath);
-    for (const repo of repos) {
-      const repositoryName = repo.name;
-      const exists = await repositoryExists(repositoryName);
-      if (!exists) {
-        await createRepository(repo);
-      } else {
-        console.log(
-          `Repository ${repositoryName} already exists on GitHub. Skipping creation.`,
-        );
-      }
-    }
+    await pushAllRepositories(repos);
     console.log(
       `Repositories creation completed. All repositories are created in the ${TARGET_ORGANIZATION} organization on GitHub.`,
     );
@@ -93,4 +95,6 @@ async function main() {
   }
 }
 
-main();
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main();
+}
