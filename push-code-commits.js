@@ -101,7 +101,7 @@ export async function pushAllLocalBranches(repoDir) {
         tryAgain = false;
       } catch (error) {
         console.error(
-          `Error pulling latest changes for branch: ${branchName}: ${error.message}`,
+          `Error pushing latest changes for branch: ${branchName}: ${error.message}`,
         );
         const { confirm } = await inquirer.prompt([
           {
@@ -112,6 +112,30 @@ export async function pushAllLocalBranches(repoDir) {
           },
         ]);
         tryAgain = confirm;
+        if (tryAgain) {
+          // Pull latest changes before retrying the push
+          try {
+            console.log(`Pulling latest changes for branch: ${branchName} before retry...`);
+            await git
+              .cwd(repoDir)
+              .pull({ "--ff-only": null, "--strategy-option": "theirs" });
+            console.log(`Successfully pulled latest changes for branch: ${branchName}`);
+          } catch (pullError) {
+            console.error(
+              `Error pulling latest changes for branch: ${branchName}: ${pullError.message}`,
+            );
+            // If pull fails, ask if they still want to retry the push
+            const { confirmAfterPullError } = await inquirer.prompt([
+              {
+                type: "confirm",
+                name: "confirmAfterPullError",
+                message: `Pull failed. Do you still want to retry push for ${branchName} branch?`,
+                default: false,
+              },
+            ]);
+            tryAgain = confirmAfterPullError;
+          }
+        }
         if (!tryAgain) {
           process.exit(1);
         }
