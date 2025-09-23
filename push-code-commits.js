@@ -57,7 +57,7 @@ export async function createLocalTrackingBranches(repoDir) {
 
 // Pull all local branches
 export async function pullAllLocalBranches(repoDir) {
-  const localBranches = await git.branchLocal();
+  const localBranches = await git.cwd(repoDir).branchLocal();
   for (const branch of localBranches.all) {
     await git.cwd(repoDir).checkout(branch);
     try {
@@ -76,7 +76,7 @@ export async function pullAllLocalBranches(repoDir) {
 // Push all local branches
 export async function pushAllLocalBranches(repoDir) {
   let branchesAlreadyUpdated = true;
-  const localBranches = await git.branchLocal();
+  const localBranches = await git.cwd(repoDir).branchLocal();
   for (const branchName of localBranches.all) {
     // console.log({ remoteBranchName: branchName })
     await git.cwd(repoDir).checkout(branchName);
