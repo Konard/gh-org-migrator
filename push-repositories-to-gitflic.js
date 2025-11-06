@@ -36,12 +36,16 @@ async function repositoryExists(repositoryName) {
     const repository = response.data;
     return repository.alias === updatedName;
   } catch (error) {
-    if (error.status === 404) {
+    if (error.response && error.response.status === 404) {
       return false;
     } else {
       console.error(
         `Error checking repository ${updatedName}: ${error.message}`,
       );
+      if (error.response) {
+        console.error('Response status:', error.response.status);
+        console.error('Response data:', error.response.data);
+      }
       process.exit(1);
     }
   }
@@ -75,6 +79,37 @@ async function createRepository(repo) {
     return response.data;
   } catch (error) {
     console.error(`Error creating repository ${updatedName}: ${error.message}`);
+
+    // If it's a 422 error, provide more detailed debugging information
+    if (error.response && error.response.status === 422) {
+      console.error('422 Validation Error Details:');
+      console.error('Status:', error.response.status);
+      console.error('Status Text:', error.response.statusText);
+
+      if (error.response.data) {
+        console.error('Response Data:', JSON.stringify(error.response.data, null, 2));
+      }
+
+      console.error('Request Payload:');
+      console.error(JSON.stringify({
+        ownerAlias: TARGET_ORGANIZATION,
+        ownerAliasType: "COMPANY",
+        title: updatedName,
+        alias: updatedName,
+        isPrivate: repo.private,
+        description: repo.description,
+        language: repo.language,
+      }, null, 2));
+
+      // Check for common issues
+      console.error('\nPossible causes:');
+      console.error('- Repository with this name already exists');
+      console.error('- Invalid repository name format');
+      console.error('- Insufficient permissions');
+      console.error('- Organization does not exist or access denied');
+      console.error('- Repository name violates GitFlic naming rules');
+    }
+
     process.exit(1);
   }
 }
