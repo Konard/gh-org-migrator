@@ -60,16 +60,33 @@ async function pullAllLocalBranches(repoDir) {
   const localBranches = await git.branchLocal();
   for (const branch of localBranches.all) {
     await git.cwd(repoDir).checkout(branch);
-    try {
-      await git
-        .cwd(repoDir)
-        .pull({ "--ff-only": null, "--strategy-option": "theirs" });
-      console.log(`Pulled latest changes for branch: ${branch}`);
-    } catch (error) {
-      console.error(
-        `Error pulling latest changes for branch: ${branch}: ${error.message}`,
-      );
-    }
+
+    let tryAgain = false;
+    do {
+      try {
+        await git
+          .cwd(repoDir)
+          .pull({ "--ff-only": null, "--strategy-option": "theirs" });
+        console.log(`Pulled latest changes for branch: ${branch}`);
+        tryAgain = false;
+      } catch (error) {
+        console.error(
+          `Error pulling latest changes for branch: ${branch}: ${error.message}`,
+        );
+        const { confirm } = await inquirer.prompt([
+          {
+            type: "confirm",
+            name: "confirm",
+            message: `Do you want to try pulling latest changes for ${branch} branch again?`,
+            default: false,
+          },
+        ]);
+        tryAgain = confirm;
+        if (!tryAgain) {
+          process.exit(1);
+        }
+      }
+    } while (tryAgain);
   }
 }
 
