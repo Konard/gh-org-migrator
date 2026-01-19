@@ -55,20 +55,45 @@ export async function createLocalTrackingBranches(repoDir) {
   }
 }
 
-// Pull all local branches
+// Pull all local branches with fallback strategies for fast-forward failures
 export async function pullAllLocalBranches(repoDir) {
   const localBranches = await git.branchLocal();
   for (const branch of localBranches.all) {
     await git.cwd(repoDir).checkout(branch);
     try {
+      // Strategy 1: Try fast-forward only pull first
       await git
         .cwd(repoDir)
         .pull({ "--ff-only": null, "--strategy-option": "theirs" });
       console.log(`Pulled latest changes for branch: ${branch}`);
     } catch (error) {
-      console.error(
-        `Error pulling latest changes for branch: ${branch}: ${error.message}`,
+      console.log(
+        `Fast-forward pull failed for branch ${branch}: ${error.message}`,
       );
+
+      try {
+        // Strategy 2: Reset to remote branch (handles divergent histories)
+        console.log(`Attempting reset to origin/${branch}...`);
+        await git.cwd(repoDir).reset(["--hard", `origin/${branch}`]);
+        console.log(`Reset successful for branch: ${branch}`);
+      } catch (resetError) {
+        console.log(
+          `Reset failed for branch ${branch}: ${resetError.message}`,
+        );
+
+        try {
+          // Strategy 3: Stash local changes then reset
+          console.log(`Attempting stash + reset for branch ${branch}...`);
+          await git.cwd(repoDir).stash();
+          await git.cwd(repoDir).reset(["--hard", `origin/${branch}`]);
+          console.log(`Stash + reset successful for branch: ${branch}`);
+        } catch (stashResetError) {
+          console.error(
+            `All pull strategies failed for branch ${branch}: ${stashResetError.message}`,
+          );
+          // Continue with other branches instead of failing completely
+        }
+      }
     }
   }
 }
